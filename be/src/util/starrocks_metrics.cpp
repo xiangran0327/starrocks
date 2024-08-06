@@ -97,6 +97,13 @@ StarRocksMetrics::StarRocksMetrics() : _metrics(_s_registry_name) {
     REGISTER_STARROCKS_METRIC(delta_column_group_get_non_pk_total);
     REGISTER_STARROCKS_METRIC(delta_column_group_get_non_pk_hit_cache);
 
+    //ADD
+    REGISTER_STARROCKS_METRIC(publish_version_thread_pool_busy_total);
+    REGISTER_STARROCKS_METRIC(stream_load_commit_transaction_failed_total);
+    REGISTER_STARROCKS_METRIC(snapshot_download_failed_total);
+    REGISTER_STARROCKS_METRIC(finish_task_failed_total);
+    REGISTER_STARROCKS_METRIC(retrying_report_exec_status_total);
+
     // push request
     _metrics.register_metric("push_requests_total", MetricLabels().add("status", "SUCCESS"),
                              &push_requests_success_total);

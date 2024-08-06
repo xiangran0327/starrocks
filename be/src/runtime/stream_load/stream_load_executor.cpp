@@ -230,6 +230,7 @@ Status StreamLoadExecutor::commit_txn(StreamLoadContext* ctx) {
     Status status(result.status);
     if (!status.ok()) {
         LOG(WARNING) << "commit transaction failed, errmsg=" << status.get_error_msg() << ctx->brief();
+        StarRocksMetrics::instance()->stream_load_commit_transaction_failed_total.increment(1);
         if (status.code() == TStatusCode::PUBLISH_TIMEOUT) {
             ctx->need_rollback = false;
             if (ctx->load_deadline_sec > UnixSeconds()) {

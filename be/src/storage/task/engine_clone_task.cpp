@@ -64,6 +64,7 @@
 #include "util/defer_op.h"
 #include "util/string_parser.hpp"
 #include "util/thrift_rpc_helper.h"
+#include "util/starrocks_metrics.h"
 
 using std::set;
 using std::stringstream;
@@ -410,6 +411,7 @@ Status EngineCloneTask::_clone_copy(DataDir& data_dir, const string& local_data_
         if (!st.ok()) {
             LOG(WARNING) << "Fail to download snapshot from " << download_url << ": " << st.to_string()
                          << " tablet:" << _clone_req.tablet_id;
+            StarRocksMetrics::instance()->snapshot_download_failed_total.increment(1);
             error_msgs->push_back("download snapshot failed. backend_ip: " + src.host);
             continue;
         }

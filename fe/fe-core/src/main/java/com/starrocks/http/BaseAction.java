@@ -38,6 +38,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.starrocks.common.DdlException;
 import com.starrocks.common.util.DebugUtil;
+import com.starrocks.metric.MetricRepo;
 import com.starrocks.privilege.AccessDeniedException;
 import com.starrocks.privilege.AuthorizationMgr;
 import com.starrocks.privilege.PrivilegeBuiltinConstants;
@@ -340,6 +341,7 @@ public abstract class BaseAction implements IAction {
             if (!parseAuthInfo(request, authInfo)) {
                 LOG.info("parse auth info failed, Authorization header {}, url {}",
                         request.getAuthorizationHeader(), request.getRequest().uri());
+                MetricRepo.COUNTER_NEED_AUTH_INFO.increase(1L);
                 throw new AccessDeniedException("Need auth information.");
             }
             LOG.debug("get auth info: {}", authInfo);

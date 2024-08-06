@@ -1307,6 +1307,7 @@ public class FrontendServiceImpl implements FrontendService.Iface {
             status.setStatus_code(TStatusCode.PUBLISH_TIMEOUT);
             String timeoutInfo = GlobalStateMgr.getCurrentGlobalTransactionMgr()
                     .getTxnPublishTimeoutDebugInfo(db.getId(), request.getTxnId());
+            MetricRepo.COUNTER_TXN_PUBLISH_TIMEOUT.increase(1L);
             LOG.warn("txn {} publish timeout {}", request.getTxnId(), timeoutInfo);
             if (timeoutInfo.length() > 240) {
                 timeoutInfo = timeoutInfo.substring(0, 240) + "...";

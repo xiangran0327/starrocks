@@ -103,6 +103,12 @@ public final class MetricRepo {
     public static final String TABLET_NUM = "tablet_num";
     public static final String TABLET_MAX_COMPACTION_SCORE = "tablet_max_compaction_score";
 
+    public static LongCounterMetric COUNTER_SLOW_DB_LOCK;
+    public static LongCounterMetric COUNTER_BAD_HEARTBEAT;
+    public static LongCounterMetric COUNTER_TXN_PUBLISH_TIMEOUT;
+    public static LongCounterMetric COUNTER_NEED_AUTH_INFO;
+    public static LongCounterMetric COUNTER_LABEL_CONFLICT;
+
     public static LongCounterMetric COUNTER_REQUEST_ALL;
     public static LongCounterMetric COUNTER_QUERY_ALL;
     public static LongCounterMetric COUNTER_QUERY_ERR;
@@ -359,7 +365,18 @@ public final class MetricRepo {
         GAUGE_SAFE_MODE.addLabel(new MetricLabel("type", "safe_mode"));
         GAUGE_SAFE_MODE.setValue(0);
         STARROCKS_METRIC_REGISTER.addMetric(GAUGE_SAFE_MODE);
-
+        //ADD
+        COUNTER_SLOW_DB_LOCK = new LongCounterMetric("slow_db_lock_total", MetricUnit.REQUESTS, "total slow db lock");
+        STARROCKS_METRIC_REGISTER.addMetric(COUNTER_SLOW_DB_LOCK);
+        COUNTER_BAD_HEARTBEAT = new LongCounterMetric("bad_heartbeat_total", MetricUnit.REQUESTS, "total bad heartbeat");
+        STARROCKS_METRIC_REGISTER.addMetric(COUNTER_BAD_HEARTBEAT);
+        COUNTER_TXN_PUBLISH_TIMEOUT = new LongCounterMetric("txn_publish_timeout_total", MetricUnit.REQUESTS,
+                "total txn publish timeout");
+        STARROCKS_METRIC_REGISTER.addMetric(COUNTER_TXN_PUBLISH_TIMEOUT);
+        COUNTER_NEED_AUTH_INFO = new LongCounterMetric("need_auth_total", MetricUnit.REQUESTS, "total need auth info");
+        STARROCKS_METRIC_REGISTER.addMetric(COUNTER_NEED_AUTH_INFO);
+        COUNTER_LABEL_CONFLICT = new LongCounterMetric("label_conflict_total", MetricUnit.REQUESTS, "total label conflict num");
+        STARROCKS_METRIC_REGISTER.addMetric(COUNTER_LABEL_CONFLICT);
         // 2. counter
         COUNTER_REQUEST_ALL = new LongCounterMetric("request_total", MetricUnit.REQUESTS, "total request");
         STARROCKS_METRIC_REGISTER.addMetric(COUNTER_REQUEST_ALL);

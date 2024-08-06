@@ -18,6 +18,7 @@
 package com.starrocks.common;
 
 import com.google.common.base.Preconditions;
+import com.starrocks.metric.MetricRepo;
 import com.starrocks.transaction.TransactionStatus;
 
 public class LabelAlreadyUsedException extends DdlException {
@@ -30,10 +31,12 @@ public class LabelAlreadyUsedException extends DdlException {
 
     public LabelAlreadyUsedException(String label) {
         super("Label [" + label + "] has already been used.");
+        MetricRepo.COUNTER_LABEL_CONFLICT.increase(1L);
     }
 
     public LabelAlreadyUsedException(String label, TransactionStatus txnStatus) {
         super("Label [" + label + "] has already been used.");
+        MetricRepo.COUNTER_LABEL_CONFLICT.increase(1L);
         switch (txnStatus) {
             case UNKNOWN:
             case PREPARE:

@@ -173,6 +173,7 @@ void run_publish_version_task(ThreadPoolToken* token, const TPublishVersionReque
             });
             if (st.is_service_unavailable()) {
                 int64_t retry_sleep_ms = 50 * retry_time;
+                StarRocksMetrics::instance()->publish_version_thread_pool_busy_total.increment(1);
                 LOG(WARNING) << "publish version threadpool is busy, retry in  " << retry_sleep_ms
                              << "ms. txn_id: " << transaction_id << ", tablet:" << tablet_task.tablet_id;
                 // In general, publish version is fast. A small sleep is needed here.

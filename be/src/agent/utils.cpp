@@ -38,6 +38,7 @@
 
 #include "agent/master_info.h"
 #include "common/status.h"
+#include "util/starrocks_metrics.h"
 
 using std::map;
 using std::string;
@@ -80,6 +81,7 @@ AgentStatus MasterServerClient::finish_task(const TFinishTaskRequest& request, T
         LOG(WARNING) << "Fail to finish_task. "
                      << "host=" << network_address.hostname << ", port=" << network_address.port
                      << ", error=" << e.what();
+        StarRocksMetrics::instance()->finish_task_failed_total.increment(1);
         return STARROCKS_ERROR;
     }
 

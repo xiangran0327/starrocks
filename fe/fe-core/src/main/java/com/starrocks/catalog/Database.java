@@ -55,6 +55,7 @@ import com.starrocks.common.util.DebugUtil;
 import com.starrocks.common.util.LogUtil;
 import com.starrocks.common.util.QueryableReentrantReadWriteLock;
 import com.starrocks.common.util.Util;
+import com.starrocks.metric.MetricRepo;
 import com.starrocks.persist.DropInfo;
 import com.starrocks.server.CatalogMgr;
 import com.starrocks.server.GlobalStateMgr;
@@ -167,6 +168,7 @@ public class Database extends MetaObject implements Writable {
         if (endMs - startMs > Config.slow_lock_threshold_ms &&
                 endMs > lastSlowLockLogTime + Config.slow_lock_log_every_ms) {
             lastSlowLockLogTime = endMs;
+            MetricRepo.COUNTER_SLOW_DB_LOCK.increase(1L);
             LOG.warn("slow db lock. type: {}, db id: {}, db name: {}, wait time: {}ms, " +
                             "former {}, current stack trace: {}", type, id, fullQualifiedName, endMs - startMs,
                     threadDump, LogUtil.getCurrentStackTrace());

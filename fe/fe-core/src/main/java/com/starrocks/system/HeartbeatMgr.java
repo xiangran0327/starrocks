@@ -46,6 +46,7 @@ import com.starrocks.common.Version;
 import com.starrocks.common.util.FrontendDaemon;
 import com.starrocks.common.util.Util;
 import com.starrocks.http.rest.BootstrapFinishAction;
+import com.starrocks.metric.MetricRepo;
 import com.starrocks.persist.HbPackage;
 import com.starrocks.server.GlobalStateMgr;
 import com.starrocks.server.RunMode;
@@ -163,6 +164,7 @@ public class HeartbeatMgr extends FrontendDaemon {
                 // the heartbeat rpc's timeout is 5 seconds, so we will not be blocked here too long.
                 HeartbeatResponse response = future.get();
                 if (response.getStatus() != HbStatus.OK) {
+                    MetricRepo.COUNTER_BAD_HEARTBEAT.increase(1L);
                     LOG.warn("get bad heartbeat response: {}", response);
                 }
                 isChanged = handleHbResponse(response, false);

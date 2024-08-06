@@ -644,6 +644,7 @@ void QueryContextManager::report_fragments(
                     fe_connection->batchReportExecStatus(res, report_batch);
                 } catch (TTransportException& e) {
                     LOG(WARNING) << "Retrying ReportExecStatus: " << e.what();
+                    StarRocksMetrics::instance()->retrying_report_exec_status_total.increment(1);
                     rpc_status = fe_connection.reopen(config::thrift_rpc_timeout_ms);
                     if (!rpc_status.ok()) {
                         continue;

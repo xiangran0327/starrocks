@@ -101,6 +101,13 @@ public:
     METRIC_DEFINE_INT_COUNTER(query_scan_rows, MetricUnit::ROWS);
     METRIC_DEFINE_INT_GAUGE(pipe_drivers, MetricUnit::NOUNIT);
 
+    //ADD
+    METRIC_DEFINE_INT_COUNTER(publish_version_thread_pool_busy_total, MetricUnit::REQUESTS);
+    METRIC_DEFINE_INT_COUNTER(stream_load_commit_transaction_failed_total, MetricUnit::REQUESTS);
+    METRIC_DEFINE_INT_COUNTER(snapshot_download_failed_total, MetricUnit::REQUESTS);
+    METRIC_DEFINE_INT_COUNTER(finish_task_failed_total, MetricUnit::REQUESTS);
+    METRIC_DEFINE_INT_COUNTER(retrying_report_exec_status_total, MetricUnit::REQUESTS);
+
     // counters
     METRIC_DEFINE_INT_COUNTER(fragment_requests_total, MetricUnit::REQUESTS);
     METRIC_DEFINE_INT_COUNTER(fragment_request_duration_us, MetricUnit::MICROSECONDS);
