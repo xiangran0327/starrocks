@@ -109,6 +109,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.starrocks.sql.optimizer.statistics.StatisticsEstimateCoefficient.TINY_SCALE_ROWS_LIMIT;
@@ -167,6 +168,8 @@ public class CoordinatorPreprocessor {
     private ImmutableMap<Long, ComputeNode> idToBackend;
     // compute node which this query will use
     private ImmutableMap<Long, ComputeNode> idToComputeNode;
+    // backends and compute node which this query will use
+    private ImmutableMap<Long, ComputeNode> idToBackendAndComputeNode;
 
     // save of related backends of this query
     private final Set<Long> usedBackendIDs = Sets.newConcurrentHashSet();
@@ -216,6 +219,14 @@ public class CoordinatorPreprocessor {
             this.idToBackend = ImmutableMap.copyOf(GlobalStateMgr.getCurrentSystemInfo().getIdToBackend());
         }
 
+        double backendComputeRatio = connectContext.getSessionVariable().getBackendComputeUseRatio();
+        int backendNum = (int) (idToComputeNode.size() * backendComputeRatio);
+        LOG.info("BE total num is {}, BE choose num is {}, CN num is {}", idToBackend.size(), backendNum, idToComputeNode.size());
+        ImmutableMap<Long, ComputeNode> chooseBackends = randomChooseBackends(idToBackend, backendNum);
+        this.idToBackendAndComputeNode = ImmutableMap.<Long, ComputeNode>builder()
+                .putAll(chooseBackends)
+                .putAll(idToComputeNode)
+                .build();
         Map<PlanFragmentId, PlanFragment> fragmentMap =
                 fragments.stream().collect(Collectors.toMap(PlanFragment::getFragmentId, x -> x));
         for (ScanNode scan : scanNodes) {
@@ -359,7 +370,7 @@ public class CoordinatorPreprocessor {
     public TNetworkAddress getBrpcAddress(TNetworkAddress beAddress) {
         long beId = Preconditions.checkNotNull(addressToBackendID.get(beAddress),
                 "backend not found: " + beAddress);
-        ComputeNode be = Preconditions.checkNotNull(idToBackend.get(beId),
+        ComputeNode be = Preconditions.checkNotNull(idToBackendAndComputeNode.get(beId),
                 "backend not found: " + beId);
         return be.getBrpcAddress();
     }
@@ -456,6 +467,15 @@ public class CoordinatorPreprocessor {
             this.idToBackend = ImmutableMap.copyOf(GlobalStateMgr.getCurrentSystemInfo().getIdToBackend());
         }
 
+        double backendComputeRatio = connectContext.getSessionVariable().getBackendComputeUseRatio();
+        int backendNum = (int) (idToComputeNode.size() * backendComputeRatio);
+        LOG.info("BE total num is {}, BE choose num is {}, CN num is {}", idToBackend.size(), backendNum, idToComputeNode.size());
+        ImmutableMap<Long, ComputeNode> chooseBackends = randomChooseBackends(idToBackend, backendNum);
+        this.idToBackendAndComputeNode = ImmutableMap.<Long, ComputeNode>builder()
+                .putAll(chooseBackends)
+                .putAll(idToComputeNode)
+                .build();
+
         //if it has compute node and contains hdfsScanNode,will use compute node,even though preferComputeNode is false
         boolean preferComputeNode = connectContext.getSessionVariable().isPreferComputeNode();
         if (idToComputeNode != null && idToComputeNode.size() > 0) {
@@ -502,6 +522,27 @@ public class CoordinatorPreprocessor {
         }
     }
 
+    private ImmutableMap<Long, ComputeNode> randomChooseBackends(ImmutableMap<Long, ComputeNode> backends, int n) {
+        if (backends.size() <= n) {
+            return backends;
+        }
+
+        List<Map.Entry<Long, ComputeNode>> backendList = new ArrayList<>(backends.entrySet());
+        List<Integer> num = new ArrayList<>();
+        Map<Long, ComputeNode> choose = new ConcurrentHashMap<>();
+
+        while (num.size() < n) {
+            int random = (int) (Math.random() * backendList.size());
+            if (!num.contains(random)) {
+                num.add(random);
+                Map.Entry<Long, ComputeNode> entry = backendList.get(random);
+                choose.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return ImmutableMap.<Long, ComputeNode>builder().putAll(choose).build();
+    }
+
     private void traceInstance() {
         if (LOG.isDebugEnabled()) {
             // TODO(zc): add a switch to close this function
@@ -524,7 +565,7 @@ public class CoordinatorPreprocessor {
     private void recordUsedBackend(TNetworkAddress addr, Long backendID) {
         if (this.queryOptions.getLoad_job_type() == TLoadJobType.STREAM_LOAD &&
                 !bePortToBeWebServerPort.containsKey(addr)) {
-            ComputeNode backend = idToBackend.get(backendID);
+            ComputeNode backend = idToBackendAndComputeNode.get(backendID);
             bePortToBeWebServerPort.put(addr, new TNetworkAddress(backend.getHost(), backend.getHttpPort()));
         }
         usedBackendIDs.add(backendID);
@@ -603,7 +644,7 @@ public class CoordinatorPreprocessor {
                 Reference<Long> backendIdRef = new Reference<>();
                 TNetworkAddress execHostport;
                 if (usedComputeNode) {
-                    execHostport = SimpleScheduler.getComputeNodeHost(this.idToComputeNode, backendIdRef);
+                    execHostport = SimpleScheduler.getComputeNodeHost(this.idToBackendAndComputeNode, backendIdRef);
                 } else {
                     execHostport = SimpleScheduler.getBackendHost(this.idToBackend, backendIdRef);
                 }
@@ -659,7 +700,7 @@ public class CoordinatorPreprocessor {
                 final Set<TNetworkAddress> childHosts = Sets.newHashSet();
                 // don't use all nodes in shared_data running mode to avoid heavy exchange cost
                 if (connectContext.getSessionVariable().isPreferComputeNode() && hasComputeNode) {
-                    Map<Long, ComputeNode> candidates = getAliveNodes(ImmutableMap.of(), idToComputeNode);
+                    Map<Long, ComputeNode> candidates = getAliveNodes(ImmutableMap.of(), idToBackendAndComputeNode);
                     candidates.values().stream().forEach(e -> childHosts.add(e.getAddress()));
                     // make olapScan maxParallelism equals prefer compute node number
                     List<Pair<Long, TNetworkAddress>> chosenNodes = adaptiveChooseNodes(fragment, candidates, childHosts);
@@ -843,7 +884,7 @@ public class CoordinatorPreprocessor {
                 Reference<Long> backendIdRef = new Reference<>();
                 TNetworkAddress execHostport;
                 if (usedComputeNode) {
-                    execHostport = SimpleScheduler.getComputeNodeHost(this.idToComputeNode, backendIdRef);
+                    execHostport = SimpleScheduler.getComputeNodeHost(this.idToBackendAndComputeNode, backendIdRef);
                 } else {
                     execHostport = SimpleScheduler.getBackendHost(this.idToBackend, backendIdRef);
                 }
@@ -1108,7 +1149,7 @@ public class CoordinatorPreprocessor {
 
     public ImmutableCollection<ComputeNode> getSelectorComputeNodes(boolean whenUseComputeNode) {
         if (whenUseComputeNode) {
-            return idToComputeNode.values();
+            return idToBackendAndComputeNode.values();
         } else {
             return ImmutableList.copyOf(idToBackend.values());
         }

@@ -90,6 +90,7 @@ public class SessionVariable implements Serializable, Writable, Cloneable {
     public static final String USE_COMPUTE_NODES = "use_compute_nodes";
     public static final String PREFER_COMPUTE_NODE = "prefer_compute_node";
     public static final String EXEC_MEM_LIMIT = "exec_mem_limit";
+    public static final String BACKEND_COMPUTE_USE_RATIO = "backend_compute_use_ratio";
 
     /**
      * configure the mem limit of load process on BE.
@@ -667,6 +668,9 @@ public class SessionVariable implements Serializable, Writable, Cloneable {
 
     @VariableMgr.VarAttr(name = LOG_REJECTED_RECORD_NUM)
     private long logRejectedRecordNum = 0;
+
+    @VariableMgr.VarAttr(name = BACKEND_COMPUTE_USE_RATIO)
+    private double backendComputeUseRatio = 1.0;
 
     /**
      * If enable this variable (only take effect for pipeline), it will deliver fragment instances
@@ -1739,6 +1743,14 @@ public class SessionVariable implements Serializable, Writable, Cloneable {
 
     public void setPreferComputeNode(boolean preferComputeNode) {
         this.preferComputeNode = preferComputeNode;
+    }
+
+    public double getBackendComputeUseRatio() {
+        return backendComputeUseRatio;
+    }
+
+    public void setBackendComputeUseRatio(double backendComputeUseRatio) {
+        this.backendComputeUseRatio = backendComputeUseRatio;
     }
 
     public boolean enableHiveColumnStats() {
