@@ -12,7 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export HADOOP_CLASSPATH=${STARROCKS_HOME}/lib/hadoop/common/*:${STARROCKS_HOME}/lib/hadoop/common/lib/*:${STARROCKS_HOME}/lib/hadoop/hdfs/*:${STARROCKS_HOME}/lib/hadoop/hdfs/lib/*
+BZL_HADOOP_PATH=/opt/hadoop/gateway/hadoopgateway/current
+export HADOOP_CLASSPATH=${BZL_HADOOP_PATH}/share/hadoop/common/*:${BZL_HADOOP_PATH}/share/hadoop/common/lib/*:${BZL_HADOOP_PATH}/share/hadoop/hdfs/*:${BZL_HADOOP_PATH}/share/hadoop/hdfs/lib/*
+#starrocks兼容hadoop3权限
+export HADOOP_USER_NAME=ares_read
+export HADOOP_BZL_TOKEN=
+
+#export HADOOP_CLASSPATH=${STARROCKS_HOME}/lib/hadoop/common/*:${STARROCKS_HOME}/lib/hadoop/common/lib/*:${STARROCKS_HOME}/lib/hadoop/hdfs/*:${STARROCKS_HOME}/lib/hadoop/hdfs/lib/*
+
 if [ -z "${HADOOP_USER_NAME}" ]
 then
     if [ -z "${USER}" ]

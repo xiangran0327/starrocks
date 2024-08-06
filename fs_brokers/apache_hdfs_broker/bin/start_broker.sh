@@ -19,6 +19,12 @@
 curdir=`dirname "$0"`
 curdir=`cd "$curdir"; pwd`
 
+#starrocks兼容hadoop3权限
+export HADOOP_USER_NAME=ares_read
+export HADOOP_BZL_TOKEN=
+
+export JAVA_HOME="/data/j2sdk"
+
 OPTS=$(getopt \
   -n $0 \
   -o '' \

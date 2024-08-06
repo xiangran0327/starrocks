@@ -18,6 +18,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+export JAVA_HOME="/data/j2sdk"
 curdir=`dirname "$0"`
 curdir=`cd "$curdir"; pwd`
 export STARROCKS_HOME=`cd "$curdir/.."; pwd`
