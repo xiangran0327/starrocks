@@ -19,11 +19,11 @@
 curdir=`dirname "$0"`
 curdir=`cd "$curdir"; pwd`
 
-#starrocks兼容hadoop3权限
-export HADOOP_USER_NAME=ares_read
-export HADOOP_BZL_TOKEN=
-
 export JAVA_HOME="/data/j2sdk"
+
+if [ -e $STARROCKS_HOME/conf/hadoop_env.sh ]; then
+    source $STARROCKS_HOME/conf/hadoop_env.sh
+fi
 
 OPTS=$(getopt \
   -n $0 \
