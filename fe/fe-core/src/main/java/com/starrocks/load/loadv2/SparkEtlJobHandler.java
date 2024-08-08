@@ -254,8 +254,6 @@ public class SparkEtlJobHandler {
             // command: yarn --config configDir application -status appId
             String yarnStatusCmd = String.format(YARN_STATUS_CMD, yarnClient, configDir, appId);
             LOG.info(yarnStatusCmd);
-            //String[] envp = {"LC_ALL=" + Config.locale, "JAVA_HOME=" + System.getProperty("java.home")};
-            LOG.info("bzl: osUser:{},bzlToken:{}", System.getenv("USER"), System.getenv("HADOOP_BZL_TOKEN"));
             // 传递USER变量
             String[] envp = {"LC_ALL=" + Config.locale, "JAVA_HOME=" + System.getProperty("java.home"),
                     "USER=" + System.getenv("USER")};

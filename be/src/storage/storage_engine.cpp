@@ -488,27 +488,8 @@ std::vector<DataDir*> StorageEngine::get_stores_for_create_tablet(TStorageMedium
     std::sort(stores.begin(), stores.end(),
               [](const auto& a, const auto& b) { return a->disk_usage(0) < b->disk_usage(0); });
 
-//    // compute average usage of all disks
-//    double avg_disk_usage = 0.0;
-//    double usage_sum = 0.0;
-//    for (const auto& v : stores) {
-//        usage_sum += v->disk_usage(0);
-//    }
-//    avg_disk_usage = usage_sum / stores.size();
-//
-//    // find the last root path which will participate in vector shuffle so that all the paths
-//    // before and included can be chosen to create tablet on preferentially
-//    size_t last_candidate_idx = 0;
-//    for (const auto v : stores) {
-//        if (v->disk_usage(0) > avg_disk_usage + config::storage_high_usage_disk_protect_ratio) {
-//            break;
-//        }
-//        last_candidate_idx++;
-//    }
-
     // randomize the preferential paths to balance number of tablets each disk has
     std::srand(std::random_device()());
-    //std::shuffle(stores.begin(), stores.begin() + last_candidate_idx, std::mt19937(std::random_device()()));
     std::shuffle(stores.begin(), stores.end(), std::mt19937(std::random_device()()));
     return stores;
 }

@@ -221,7 +221,6 @@ public class CoordinatorPreprocessor {
 
         double backendComputeRatio = connectContext.getSessionVariable().getBackendComputeUseRatio();
         int backendNum = (int) (idToComputeNode.size() * backendComputeRatio);
-        LOG.info("BE total num is {}, BE choose num is {}, CN num is {}", idToBackend.size(), backendNum, idToComputeNode.size());
         ImmutableMap<Long, ComputeNode> chooseBackends = randomChooseBackends(idToBackend, backendNum);
         this.idToBackendAndComputeNode = ImmutableMap.<Long, ComputeNode>builder()
                 .putAll(chooseBackends)
@@ -469,7 +468,6 @@ public class CoordinatorPreprocessor {
 
         double backendComputeRatio = connectContext.getSessionVariable().getBackendComputeUseRatio();
         int backendNum = (int) (idToComputeNode.size() * backendComputeRatio);
-        LOG.info("BE total num is {}, BE choose num is {}, CN num is {}", idToBackend.size(), backendNum, idToComputeNode.size());
         ImmutableMap<Long, ComputeNode> chooseBackends = randomChooseBackends(idToBackend, backendNum);
         this.idToBackendAndComputeNode = ImmutableMap.<Long, ComputeNode>builder()
                 .putAll(chooseBackends)
