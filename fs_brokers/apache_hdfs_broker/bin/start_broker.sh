@@ -21,6 +21,7 @@ curdir=`cd "$curdir"; pwd`
 
 export JAVA_HOME="/data/j2sdk"
 
+export STARROCKS_HOME=`cd "$curdir/.."; pwd`
 if [ -e $STARROCKS_HOME/conf/hadoop_env.sh ]; then
     source $STARROCKS_HOME/conf/hadoop_env.sh
 fi
