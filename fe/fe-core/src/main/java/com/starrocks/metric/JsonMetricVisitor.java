@@ -35,9 +35,15 @@
 package com.starrocks.metric;
 
 import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Snapshot;
 import com.starrocks.monitor.jvm.GcNames;
 import com.starrocks.monitor.jvm.JvmStats;
+import com.starrocks.server.GlobalStateMgr;
+import com.starrocks.server.NodeMgr;
+import com.starrocks.system.SystemInfoService;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class JsonMetricVisitor extends MetricVisitor {
@@ -139,10 +145,57 @@ public class JsonMetricVisitor extends MetricVisitor {
 
     @Override
     public void visitHistogram(String name, Histogram histogram) {
+        final String fullName = prefix + "_" + name.replaceAll("\\.", "_");
+        Snapshot snapshot = histogram.getSnapshot();
+
+        buildMetric(fullName, "milliseconds", String.valueOf(snapshot.get75thPercentile()),
+                Collections.singletonList(new MetricLabel("quantile", "0.75")));
+        buildMetric(fullName, "milliseconds", String.valueOf(snapshot.get95thPercentile()),
+                Collections.singletonList(new MetricLabel("quantile", "0.95")));
+        buildMetric(fullName, "milliseconds", String.valueOf(snapshot.get98thPercentile()),
+                Collections.singletonList(new MetricLabel("quantile", "0.98")));
+        buildMetric(fullName, "milliseconds", String.valueOf(snapshot.get99thPercentile()),
+                Collections.singletonList(new MetricLabel("quantile", "0.99")));
+        buildMetric(fullName, "milliseconds", String.valueOf(snapshot.get999thPercentile()),
+                Collections.singletonList(new MetricLabel("quantile", "0.999")));
+
+        buildMetric(fullName + "_sum", "milliseconds", String.valueOf(histogram.getCount() * snapshot.getMean()),
+                null);
+        buildMetric(fullName + "_count", "nounit", String.valueOf(histogram.getCount()), null);
     }
 
     @Override
     public void getNodeInfo() {
+        final String NODE_INFO = "node_info";
+        final NodeMgr nodeMgr = GlobalStateMgr.getCurrentState().getNodeMgr();
+        final SystemInfoService systemInfoService = nodeMgr.getClusterInfo();
+
+        buildMetric(NODE_INFO, "nounit", String.valueOf(nodeMgr.getFrontends(null).size()),
+                Arrays.asList(new MetricLabel("type", "fe_node_num"), new MetricLabel("status", "total")));
+        buildMetric(NODE_INFO, "nounit", String.valueOf(systemInfoService.getTotalBackendNumber()),
+                Arrays.asList(new MetricLabel("type", "be_node_num"), new MetricLabel("status", "total")));
+        buildMetric(NODE_INFO, "nounit", String.valueOf(systemInfoService.getAliveBackendNumber()),
+                Arrays.asList(new MetricLabel("type", "be_node_num"), new MetricLabel("status", "alive")));
+        buildMetric(NODE_INFO, "nounit",
+                String.valueOf(systemInfoService.getDecommissionedBackendIds().size()),
+                Arrays.asList(new MetricLabel("type", "be_node_num"), new MetricLabel("status", "decommissioned")));
+        buildMetric(NODE_INFO, "nounit", String.valueOf(
+                        GlobalStateMgr.getCurrentState().getBrokerMgr().getAllBrokers().stream().filter(b -> !b.isAlive)
+                                .count()),
+                Arrays.asList(new MetricLabel("type", "broker_node_num"), new MetricLabel("status", "dead")));
+
+        buildMetric(NODE_INFO, "nounit",
+                String.valueOf(systemInfoService.getTotalComputeNodeNumber()),
+                Arrays.asList(new MetricLabel("type", "cn_node_num"), new MetricLabel("status", "total")));
+        buildMetric(NODE_INFO, "nounit",
+                String.valueOf(systemInfoService.getAliveComputeNodeNumber()),
+                Arrays.asList(new MetricLabel("type", "cn_node_num"), new MetricLabel("status", "alive")));
+
+        // only master FE has this metrics, to help the Grafana knows who is the leader
+        if (GlobalStateMgr.getCurrentState().isLeader()) {
+            buildMetric(NODE_INFO, "nounit", String.valueOf(1),
+                    Collections.singletonList(new MetricLabel("type", "is_master")));
+        }
     }
 
     @Override
