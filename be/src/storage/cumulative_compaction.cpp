@@ -50,8 +50,16 @@ Status CumulativeCompaction::compact() {
     SCOPED_THREAD_LOCAL_MEM_TRACKER_SETTER(_mem_tracker);
 
     // 3. do cumulative compaction, merge rowsets
-    RETURN_IF_ERROR(do_compaction());
+    int64_t duration_ns = 0;
+    int64_t begin_nanos = MonotonicNanos();
+    {
+        SCOPED_RAW_TIMER(&duration_ns);
+        RETURN_IF_ERROR(do_compaction());
+    }
     TRACE("compaction finished");
+    LOG(INFO) << "duration_ns=" << duration_ns;
+    int64_t cost_time = MonotonicNanos() - begin_nanos;
+    LOG(INFO) << "cost_time=" << cost_time;
 
     // 4. set state to success
     _state = CompactionState::SUCCESS;

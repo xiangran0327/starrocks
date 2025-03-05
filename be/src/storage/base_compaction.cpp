@@ -47,8 +47,17 @@ Status BaseCompaction::compact() {
     DeferOp op([&] { tls_thread_status.set_mem_tracker(prev_tracker); });
 
     // 2. do base compaction, merge rowsets
-    RETURN_IF_ERROR(do_compaction());
+    int64_t duration_ns = 0;
+    int64_t begin_nanos = MonotonicNanos();
+
+    {
+        SCOPED_RAW_TIMER(&duration_ns);
+        RETURN_IF_ERROR(do_compaction());
+    }
     TRACE("compaction finished");
+    LOG(INFO) << "duration_ns=" << duration_ns;
+    int64_t cost_time = MonotonicNanos() - begin_nanos;
+    LOG(INFO) << "cost_time=" << cost_time;
 
     // 3. set state to success
     _state = CompactionState::SUCCESS;

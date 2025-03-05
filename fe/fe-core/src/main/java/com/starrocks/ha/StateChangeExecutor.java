@@ -19,6 +19,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Queues;
 import com.starrocks.common.util.Daemon;
 import com.starrocks.common.util.Util;
+import com.starrocks.metric.MetricRepo;
 import com.starrocks.server.GlobalStateMgr;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -177,6 +178,9 @@ public class StateChangeExecutor extends Daemon {
             } // end switch formerFeType
 
             LOG.info("finished to transfer FE type from {} to {}", feType, newType);
+            if (newType == FrontendNodeType.LEADER) {
+                MetricRepo.COUNTER_FE_TRANSFER_TYPE_TO_LEADER.increase(1L);
+            }
         }
     } // end runOneCycle
 }

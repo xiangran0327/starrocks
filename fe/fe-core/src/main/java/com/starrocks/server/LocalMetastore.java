@@ -127,6 +127,7 @@ import com.starrocks.lake.DataCacheInfo;
 import com.starrocks.lake.LakeMaterializedView;
 import com.starrocks.lake.LakeTablet;
 import com.starrocks.lake.StorageInfo;
+import com.starrocks.metric.MetricRepo;
 import com.starrocks.persist.AddPartitionsInfoV2;
 import com.starrocks.persist.AutoIncrementInfo;
 import com.starrocks.persist.BackendIdsUpdateInfo;
@@ -1428,6 +1429,7 @@ public class LocalMetastore implements ConnectorMetadata {
                 // add partition log
                 addPartitionLog(db, olapTable, partitionDescs, addPartitionClause, partitionInfo, partitionList,
                         existPartitionNameSet);
+                MetricRepo.COUNTER_ADD_PARTITION.increase((long) partitionList.size());
             } finally {
                 cleanExistPartitionNameSet(existPartitionNameSet, partitionNameToTabletSet);
                 db.writeUnlock();
@@ -1700,6 +1702,7 @@ public class LocalMetastore implements ConnectorMetadata {
                 partition.createRollupIndex(index);
             }
         }
+        MetricRepo.COUNTER_CREATE_PARTITION.increase(1L);
         return partition;
     }
 

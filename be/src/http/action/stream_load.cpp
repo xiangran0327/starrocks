@@ -136,8 +136,8 @@ StreamLoadAction::StreamLoadAction(ExecEnv* exec_env, ConcurrentLimiter* limiter
 
 StreamLoadAction::~StreamLoadAction() = default;
 
-static void _send_reply(HttpRequest* req, const std::string& str) {
-    if (config::enable_stream_load_verbose_log) {
+static void _send_reply(HttpRequest* req, const std::string& str, const bool status) {
+    if (config::enable_stream_load_verbose_log && (config::enable_stream_load_status_verbose_log || !status)) {
         LOG(INFO) << "streaming load response: " << str;
     }
     HttpChannel::send_reply(req, str);
@@ -170,7 +170,7 @@ void StreamLoadAction::handle(HttpRequest* req) {
     }
 
     auto str = ctx->to_json();
-    _send_reply(req, str);
+    _send_reply(req, str, ctx->status.ok());
 
     // update statstics
     streaming_load_requests_total.increment(1);
@@ -234,18 +234,20 @@ int StreamLoadAction::on_header(HttpRequest* req) {
                 Status::ResourceBusy(fmt::format("Stream Load exceed http cuncurrent limit {}, please try again later",
                                                  config::be_http_num_workers - 1));
         auto str = ctx->to_json();
-        _send_reply(req, str);
+        _send_reply(req, str, ctx->status.ok());
         return -1;
     } else {
         LOG(INFO) << "new income streaming load request." << ctx->brief() << ", db=" << ctx->db
                   << ", tbl=" << ctx->table;
     }
 
-    if (config::enable_stream_load_verbose_log) {
-        LOG(INFO) << "streaming load request: " << req->debug_string();
+    auto request_debug_string = req->debug_string();
+    auto st = _on_header(req, ctx);
+
+    if (config::enable_stream_load_verbose_log && (config::enable_stream_load_status_verbose_log || !st.ok())) {
+        LOG(INFO) << "streaming load request: " << request_debug_string;
     }
 
-    auto st = _on_header(req, ctx);
     if (!st.ok()) {
         ctx->status = st;
         if (ctx->need_rollback) {
@@ -256,7 +258,7 @@ int StreamLoadAction::on_header(HttpRequest* req) {
             ctx->body_sink->cancel(st);
         }
         auto str = ctx->to_json();
-        _send_reply(req, str);
+        _send_reply(req, str, st.ok());
         streaming_load_current_processing.increment(-1);
         return -1;
     }

@@ -49,6 +49,7 @@ import com.starrocks.common.util.Util;
 import com.starrocks.lake.DataCacheInfo;
 import com.starrocks.lake.LakeTable;
 import com.starrocks.lake.StorageInfo;
+import com.starrocks.metric.MetricRepo;
 import com.starrocks.sql.ast.AddRollupClause;
 import com.starrocks.sql.ast.AlterClause;
 import com.starrocks.sql.ast.CreateTableStmt;
@@ -158,6 +159,9 @@ public class OlapTableFactory implements AbstractTableFactory {
         DistributionDesc distributionDesc = stmt.getDistributionDesc();
         Preconditions.checkNotNull(distributionDesc);
         DistributionInfo distributionInfo = distributionDesc.toDistributionInfo(baseSchema);
+
+        HashDistributionInfo hashDistributionInfo = (HashDistributionInfo) distributionInfo;
+        MetricRepo.GAUGE_CREATE_TABLE_BUCKET_NUM.setValue((long) hashDistributionInfo.getBucketNum());
 
         short shortKeyColumnCount = 0;
         List<Integer> sortKeyIdxes = new ArrayList<>();

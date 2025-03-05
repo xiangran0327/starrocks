@@ -1906,6 +1906,7 @@ public class FrontendServiceImpl implements FrontendService.Iface {
             result.setStatus(errorStatus);
             return result;
         }
+        MetricRepo.COUNTER_AUTO_CREATE_PARTITION.increase((long) request.partition_values.size());
 
         // Now only supports the case of automatically creating single range partition
         PartitionInfo partitionInfo = olapTable.getPartitionInfo();

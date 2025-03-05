@@ -153,20 +153,27 @@ StarRocksMetrics::StarRocksMetrics() : _metrics(_s_registry_name) {
                              &base_compaction_deltas_total);
     _metrics.register_metric("compaction_deltas_total", MetricLabels().add("type", "cumulative"),
                              &cumulative_compaction_deltas_total);
+    _metrics.register_metric("compaction_deltas_total", MetricLabels().add("type", "update"),
+                             &update_compaction_deltas_total);
+
     _metrics.register_metric("compaction_bytes_total", MetricLabels().add("type", "base"),
                              &base_compaction_bytes_total);
     _metrics.register_metric("compaction_bytes_total", MetricLabels().add("type", "cumulative"),
                              &cumulative_compaction_bytes_total);
-    _metrics.register_metric("compaction_deltas_total", MetricLabels().add("type", "update"),
-                             &update_compaction_deltas_total);
     _metrics.register_metric("compaction_bytes_total", MetricLabels().add("type", "update"),
                              &update_compaction_bytes_total);
+
+    _metrics.register_metric("compaction_duration_us", MetricLabels().add("type", "base"),
+                             &base_compaction_duration_us);
+    _metrics.register_metric("compaction_duration_us", MetricLabels().add("type", "cumulative"),
+                             &cumulative_compaction_duration_us);
+    _metrics.register_metric("compaction_duration_us", MetricLabels().add("type", "update"),
+                             &update_compaction_duration_us);
+
     _metrics.register_metric("update_compaction_outputs_total", MetricLabels().add("type", "update"),
                              &update_compaction_outputs_total);
     _metrics.register_metric("update_compaction_outputs_bytes_total", MetricLabels().add("type", "update"),
                              &update_compaction_outputs_bytes_total);
-    _metrics.register_metric("update_compaction_duration_us", MetricLabels().add("type", "update"),
-                             &update_compaction_duration_us);
 
     _metrics.register_metric("meta_request_total", MetricLabels().add("type", "write"), &meta_write_request_total);
     _metrics.register_metric("meta_request_total", MetricLabels().add("type", "read"), &meta_read_request_total);

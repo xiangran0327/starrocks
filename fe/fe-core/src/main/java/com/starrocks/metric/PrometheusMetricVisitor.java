@@ -37,6 +37,8 @@ package com.starrocks.metric;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Snapshot;
 import com.google.common.base.Joiner;
+import com.starrocks.catalog.FsBroker;
+import com.starrocks.ha.FrontendNodeType;
 import com.starrocks.monitor.jvm.JvmStats;
 import com.starrocks.monitor.jvm.JvmStats.BufferPool;
 import com.starrocks.monitor.jvm.JvmStats.GarbageCollector;
@@ -208,27 +210,36 @@ public class PrometheusMetricVisitor extends MetricVisitor {
         sb.append(Joiner.on(" ").join(TYPE, NODE_INFO, "gauge\n"));
         sb.append(NODE_INFO).append("{type=\"fe_node_num\", state=\"total\"} ")
                 .append(GlobalStateMgr.getCurrentState().getFrontends(null).size()).append("\n");
+        sb.append(NODE_INFO).append("{type=\"fe_node_num\", state=\"follower\"} ")
+                .append(GlobalStateMgr.getCurrentState().getFrontends(FrontendNodeType.FOLLOWER).size()).append("\n");
+        sb.append(NODE_INFO).append("{type=\"fe_node_num\", state=\"observer\"} ")
+                .append(GlobalStateMgr.getCurrentState().getFrontends(FrontendNodeType.OBSERVER).size()).append("\n");
         sb.append(NODE_INFO).append("{type=\"be_node_num\", state=\"total\"} ")
                 .append(GlobalStateMgr.getCurrentSystemInfo().getTotalBackendNumber()).append("\n");
         sb.append(NODE_INFO).append("{type=\"be_node_num\", state=\"alive\"} ")
                 .append(GlobalStateMgr.getCurrentSystemInfo().getAliveBackendNumber()).append("\n");
         sb.append(NODE_INFO).append("{type=\"be_node_num\", state=\"decommissioned\"} ")
                 .append(GlobalStateMgr.getCurrentSystemInfo().getDecommissionedBackendIds().size()).append("\n");
-        sb.append(NODE_INFO).append("{type=\"broker_node_num\", state=\"dead\"} ").append(
-                        GlobalStateMgr.getCurrentState().getBrokerMgr().getAllBrokers().stream().filter(b -> !b.isAlive)
-                                .count())
-                .append("\n");
 
+        List<FsBroker> allBrokers = GlobalStateMgr.getCurrentState().getBrokerMgr().getAllBrokers();
+        sb.append(NODE_INFO).append("{type=\"broker_node_num\", state=\"total\"} ").append(
+                allBrokers.size()).append("\n");
+        sb.append(NODE_INFO).append("{type=\"broker_node_num\", state=\"alive\"} ").append(
+                allBrokers.stream().filter(b -> b.isAlive).count()).append("\n");
+        sb.append(NODE_INFO).append("{type=\"broker_node_num\", state=\"dead\"} ").append(
+                allBrokers.stream().filter(b -> !b.isAlive).count()).append("\n");
         sb.append(NODE_INFO).append("{type=\"cn_node_num\", state=\"total\"} ")
             .append(GlobalStateMgr.getCurrentSystemInfo().getTotalComputeNodeNumber()).append("\n");
         sb.append(NODE_INFO).append("{type=\"cn_node_num\", state=\"alive\"} ")
             .append(GlobalStateMgr.getCurrentSystemInfo().getAliveComputeNodeNumber()).append("\n");
 
-
-
         // only master FE has this metrics, to help the Grafana knows who is the leader
         if (GlobalStateMgr.getCurrentState().isLeader()) {
             sb.append(NODE_INFO).append("{type=\"is_master\"} ").append(1).append("\n");
+        } else if (FrontendNodeType.OBSERVER == GlobalStateMgr.getCurrentState().getFeType()) {
+            sb.append(NODE_INFO).append("{type=\"is_observer\"} ").append(0).append("\n");
+        } else if (FrontendNodeType.FOLLOWER == GlobalStateMgr.getCurrentState().getFeType()) {
+            sb.append(NODE_INFO).append("{type=\"is_follower\"} ").append(-1).append("\n");
         }
     }
 

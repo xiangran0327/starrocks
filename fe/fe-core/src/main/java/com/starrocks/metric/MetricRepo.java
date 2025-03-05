@@ -104,10 +104,16 @@ public final class MetricRepo {
     public static final String TABLET_MAX_COMPACTION_SCORE = "tablet_max_compaction_score";
 
     public static LongCounterMetric COUNTER_SLOW_DB_LOCK;
+    public static LongCounterMetric COUNTER_SLOW_DB_WAIT_TIME;
     public static LongCounterMetric COUNTER_BAD_HEARTBEAT;
     public static LongCounterMetric COUNTER_TXN_PUBLISH_TIMEOUT;
     public static LongCounterMetric COUNTER_NEED_AUTH_INFO;
     public static LongCounterMetric COUNTER_LABEL_CONFLICT;
+    public static LongCounterMetric COUNTER_FE_TRANSFER_TYPE_TO_LEADER;
+    public static LongCounterMetric COUNTER_CREATE_PARTITION;
+    public static LongCounterMetric COUNTER_AUTO_CREATE_PARTITION;
+    public static LongCounterMetric COUNTER_ADD_PARTITION;
+    public static GaugeMetricImpl<Long> GAUGE_CREATE_TABLE_BUCKET_NUM;
 
     public static LongCounterMetric COUNTER_REQUEST_ALL;
     public static LongCounterMetric COUNTER_QUERY_ALL;
@@ -368,6 +374,9 @@ public final class MetricRepo {
         //ADD
         COUNTER_SLOW_DB_LOCK = new LongCounterMetric("slow_db_lock_total", MetricUnit.REQUESTS, "total slow db lock");
         STARROCKS_METRIC_REGISTER.addMetric(COUNTER_SLOW_DB_LOCK);
+        COUNTER_SLOW_DB_WAIT_TIME = new LongCounterMetric("slow_db_lock_wait_time_total_ms",
+                MetricUnit.MILLISECONDS, "total slow db lock wait time");
+        STARROCKS_METRIC_REGISTER.addMetric(COUNTER_SLOW_DB_WAIT_TIME);
         COUNTER_BAD_HEARTBEAT = new LongCounterMetric("bad_heartbeat_total", MetricUnit.REQUESTS, "total bad heartbeat");
         STARROCKS_METRIC_REGISTER.addMetric(COUNTER_BAD_HEARTBEAT);
         COUNTER_TXN_PUBLISH_TIMEOUT = new LongCounterMetric("txn_publish_timeout_total", MetricUnit.REQUESTS,
@@ -377,6 +386,23 @@ public final class MetricRepo {
         STARROCKS_METRIC_REGISTER.addMetric(COUNTER_NEED_AUTH_INFO);
         COUNTER_LABEL_CONFLICT = new LongCounterMetric("label_conflict_total", MetricUnit.REQUESTS, "total label conflict num");
         STARROCKS_METRIC_REGISTER.addMetric(COUNTER_LABEL_CONFLICT);
+        COUNTER_FE_TRANSFER_TYPE_TO_LEADER = new LongCounterMetric("counter_fe_transfer_type_to_master_total",
+                MetricUnit.REQUESTS, "total fe transfer type to master");
+        STARROCKS_METRIC_REGISTER.addMetric(COUNTER_FE_TRANSFER_TYPE_TO_LEADER);
+        COUNTER_CREATE_PARTITION = new LongCounterMetric("counter_create_partition_total",
+                MetricUnit.REQUESTS, "total create partition");
+        STARROCKS_METRIC_REGISTER.addMetric(COUNTER_CREATE_PARTITION);
+        COUNTER_AUTO_CREATE_PARTITION = new LongCounterMetric("counter_auto_create_partition_total",
+                MetricUnit.REQUESTS, "total auto create partition");
+        STARROCKS_METRIC_REGISTER.addMetric(COUNTER_AUTO_CREATE_PARTITION);
+        COUNTER_ADD_PARTITION = new LongCounterMetric("counter_add_partition_total", MetricUnit.REQUESTS, "total add partition");
+        STARROCKS_METRIC_REGISTER.addMetric(COUNTER_ADD_PARTITION);
+
+        GAUGE_CREATE_TABLE_BUCKET_NUM = new GaugeMetricImpl<>(
+                "create_table_bucket_num", MetricUnit.OPERATIONS, "num of olap table bucket");
+        GAUGE_CREATE_TABLE_BUCKET_NUM.setValue(0L);
+        STARROCKS_METRIC_REGISTER.addMetric(GAUGE_CREATE_TABLE_BUCKET_NUM);
+
         // 2. counter
         COUNTER_REQUEST_ALL = new LongCounterMetric("request_total", MetricUnit.REQUESTS, "total request");
         STARROCKS_METRIC_REGISTER.addMetric(COUNTER_REQUEST_ALL);

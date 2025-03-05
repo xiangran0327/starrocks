@@ -168,9 +168,11 @@ public class Database extends MetaObject implements Writable {
         if (endMs - startMs > Config.slow_lock_threshold_ms &&
                 endMs > lastSlowLockLogTime + Config.slow_lock_log_every_ms) {
             lastSlowLockLogTime = endMs;
+            long waitTimeMs = endMs - startMs;
             MetricRepo.COUNTER_SLOW_DB_LOCK.increase(1L);
+            MetricRepo.COUNTER_SLOW_DB_WAIT_TIME.increase(waitTimeMs);
             LOG.warn("slow db lock. type: {}, db id: {}, db name: {}, wait time: {}ms, " +
-                            "former {}, current stack trace: {}", type, id, fullQualifiedName, endMs - startMs,
+                            "former {}, current stack trace: {}", type, id, fullQualifiedName, waitTimeMs,
                     threadDump, LogUtil.getCurrentStackTrace());
         }
     }

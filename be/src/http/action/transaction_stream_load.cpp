@@ -88,8 +88,8 @@ TransactionManagerAction::TransactionManagerAction(ExecEnv* exec_env) : _exec_en
 
 TransactionManagerAction::~TransactionManagerAction() = default;
 
-static void _send_reply(HttpRequest* req, const std::string& str) {
-    if (config::enable_stream_load_verbose_log) {
+static void _send_reply(HttpRequest* req, const std::string& str, const bool status) {
+    if (config::enable_stream_load_verbose_log && (config::enable_stream_load_status_verbose_log || !status)) {
         LOG(INFO) << "transaction streaming load response: " << str;
     }
     HttpChannel::send_reply(req, str);
@@ -110,7 +110,7 @@ void TransactionManagerAction::handle(HttpRequest* req) {
     auto txn_op = req->param(HTTP_TXN_OP_KEY);
     if (boost::iequals(txn_op, TXN_LIST)) {
         st = _exec_env->transaction_mgr()->list_transactions(req, &resp);
-        return _send_reply(req, resp);
+        return _send_reply(req, resp, st.ok());
     }
 
     if (req->header(HTTP_LABEL_KEY).empty()) {
@@ -128,7 +128,10 @@ void TransactionManagerAction::handle(HttpRequest* req) {
                                  Status::InvalidArgument(fmt::format("unsupport transaction operation {}", txn_op)));
     }
 
-    _send_reply(req, resp);
+    if (config::enable_stream_load_verbose_log && (config::enable_stream_load_status_verbose_log || !st.ok())) {
+            LOG(INFO) << "transaction streaming load request: " << req->debug_string();
+    }
+    _send_reply(req, resp, st.ok());
 }
 
 TransactionStreamLoadAction::TransactionStreamLoadAction(ExecEnv* exec_env) : _exec_env(exec_env) {}
@@ -180,14 +183,10 @@ void TransactionStreamLoadAction::handle(HttpRequest* req) {
     auto resp = _exec_env->transaction_mgr()->_build_reply(TXN_LOAD, ctx);
     ctx->lock.unlock();
 
-    _send_reply(req, resp);
+    _send_reply(req, resp, ctx->status.ok());
 }
 
 int TransactionStreamLoadAction::on_header(HttpRequest* req) {
-    if (config::enable_stream_load_verbose_log) {
-        LOG(INFO) << "transaction streaming load request: " << req->debug_string();
-    }
-
     const auto& label = req->header(HTTP_LABEL_KEY);
     if (label.empty()) {
         _send_error_reply(req, Status::InvalidArgument(fmt::format("Invalid label {}", req->header(HTTP_LABEL_KEY))));
@@ -243,7 +242,7 @@ int TransactionStreamLoadAction::on_header(HttpRequest* req) {
         }
         auto resp = _exec_env->transaction_mgr()->_build_reply(TXN_LOAD, ctx);
         ctx->lock.unlock();
-        _send_reply(req, resp);
+        _send_reply(req, resp, st.ok());
         return -1;
     }
     return 0;

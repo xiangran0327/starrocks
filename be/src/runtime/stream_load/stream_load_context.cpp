@@ -62,6 +62,12 @@ std::string StreamLoadContext::to_resp_json(const std::string& txn_op, const Sta
     writer.Key("Message");
     writer.String(st.get_error_msg().c_str());
 
+    // db table
+    writer.Key("Db");
+    writer.String(db.c_str());
+    writer.Key("Table");
+    writer.String(table.c_str());
+
     if (st.ok()) {
         // label
         writer.Key("Label");
@@ -136,6 +142,12 @@ std::string StreamLoadContext::to_json() const {
     // label
     writer.Key("Label");
     writer.String(label.c_str());
+
+    // db table
+    writer.Key("Db");
+    writer.String(db.c_str());
+    writer.Key("Table");
+    writer.String(table.c_str());
 
     // status
     writer.Key("Status");

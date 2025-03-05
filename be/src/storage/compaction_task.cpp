@@ -133,6 +133,11 @@ void CompactionTask::run() {
     _task_info.elapsed_time = _watch.elapsed_time() / 1000;
     is_finished = true;
     LOG(INFO) << "compaction finish. status:" << status.to_string() << ", task info:" << _task_info.to_string();
+    if (_task_info.compaction_type == BASE_COMPACTION) {
+        StarRocksMetrics::instance()->base_compaction_duration_us.increment(_task_info.elapsed_time);
+    } else if (_task_info.compaction_type == CUMULATIVE_COMPACTION) {
+        StarRocksMetrics::instance()->cumulative_compaction_duration_us.increment(_task_info.elapsed_time);
+    }
 }
 
 bool CompactionTask::should_stop() const {
