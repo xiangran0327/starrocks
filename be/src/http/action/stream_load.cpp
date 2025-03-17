@@ -137,8 +137,12 @@ StreamLoadAction::StreamLoadAction(ExecEnv* exec_env, ConcurrentLimiter* limiter
 StreamLoadAction::~StreamLoadAction() = default;
 
 static void _send_reply(HttpRequest* req, const std::string& str, const bool status) {
-    if (config::enable_stream_load_verbose_log && (config::enable_stream_load_status_verbose_log || !status)) {
-        LOG(INFO) << "streaming load response: " << str;
+    if (config::enable_stream_load_verbose_log && (config::enable_stream_load_verbose_log_all || !status)) {
+        if (status) {
+            LOG(INFO) << "streaming load response: " << str;
+        } else {
+            LOG(WARNING) << "streaming load response: " << str;
+        }
     }
     HttpChannel::send_reply(req, str);
 }
@@ -244,7 +248,7 @@ int StreamLoadAction::on_header(HttpRequest* req) {
     auto request_debug_string = req->debug_string();
     auto st = _on_header(req, ctx);
 
-    if (config::enable_stream_load_verbose_log && (config::enable_stream_load_status_verbose_log || !st.ok())) {
+    if (config::enable_stream_load_verbose_log && (config::enable_stream_load_verbose_log_all || !st.ok())) {
         LOG(INFO) << "streaming load request: " << request_debug_string;
     }
 

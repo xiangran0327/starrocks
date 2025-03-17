@@ -1696,6 +1696,12 @@ public class LocalMetastore implements ConnectorMetadata {
             } else {
                 createOlapTablets(table, index, Replica.ReplicaState.NORMAL, distributionInfo,
                         partition.getVisibleVersion(), replicationNum, tabletMeta, tabletIdSet);
+                int bucketNum = distributionInfo.getBucketNum();
+                MetricRepo.GAUGE_CREATE_TABLE_BUCKET_NUM.setValue((long) bucketNum);
+                if (bucketNum >= Config.max_create_bucket_warning_num) {
+                    LOG.warn("Create partition bucket num over {},db_name: {},table_name: {},partition: {},bucket_num: {}",
+                            Config.max_create_bucket_warning_num, db.getFullName(), table.getName(), partitionName, bucketNum);
+                }
             }
             if (index.getId() != table.getBaseIndexId()) {
                 // add rollup index to partition

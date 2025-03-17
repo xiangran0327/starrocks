@@ -161,7 +161,12 @@ public class OlapTableFactory implements AbstractTableFactory {
         DistributionInfo distributionInfo = distributionDesc.toDistributionInfo(baseSchema);
 
         HashDistributionInfo hashDistributionInfo = (HashDistributionInfo) distributionInfo;
-        MetricRepo.GAUGE_CREATE_TABLE_BUCKET_NUM.setValue((long) hashDistributionInfo.getBucketNum());
+        int bucketNum = hashDistributionInfo.getBucketNum();
+        MetricRepo.GAUGE_CREATE_TABLE_BUCKET_NUM.setValue((long) bucketNum);
+        if (bucketNum >= Config.max_create_bucket_warning_num) {
+            LOG.warn("Create table bucket num over {},db_name: {},table_name: {},bucket_num: {}",
+                    Config.max_create_bucket_warning_num, db.getFullName(), tableName, bucketNum);
+        }
 
         short shortKeyColumnCount = 0;
         List<Integer> sortKeyIdxes = new ArrayList<>();

@@ -2810,4 +2810,7 @@ public class Config extends ConfigBase {
 
     @ConfField(mutable = false)
     public static int jdbc_connection_idle_timeout_ms = 600000;
+
+    @ConfField(mutable = true)
+    public static int max_create_bucket_warning_num = 200;
 }

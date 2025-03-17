@@ -89,8 +89,12 @@ TransactionManagerAction::TransactionManagerAction(ExecEnv* exec_env) : _exec_en
 TransactionManagerAction::~TransactionManagerAction() = default;
 
 static void _send_reply(HttpRequest* req, const std::string& str, const bool status) {
-    if (config::enable_stream_load_verbose_log && (config::enable_stream_load_status_verbose_log || !status)) {
-        LOG(INFO) << "transaction streaming load response: " << str;
+    if (config::enable_stream_load_verbose_log && (config::enable_stream_load_verbose_log_all || !status)) {
+        if (status) {
+            LOG(WARNING) << "transaction streaming load response: " << str;
+        } else {
+            LOG(INFO) << "transaction streaming load response: " << str;
+        }
     }
     HttpChannel::send_reply(req, str);
 }
@@ -119,6 +123,9 @@ void TransactionManagerAction::handle(HttpRequest* req) {
 
     if (boost::iequals(txn_op, TXN_BEGIN)) {
         st = _exec_env->transaction_mgr()->begin_transaction(req, &resp);
+        if (config::enable_stream_load_verbose_log && (config::enable_stream_load_verbose_log_all || !st.ok())) {
+            LOG(INFO) << "transaction streaming load request: " << req->debug_string();
+        }
     } else if (boost::iequals(txn_op, TXN_COMMIT) || boost::iequals(txn_op, TXN_PREPARE)) {
         st = _exec_env->transaction_mgr()->commit_transaction(req, &resp);
     } else if (boost::iequals(txn_op, TXN_ROLLBACK)) {
@@ -128,9 +135,6 @@ void TransactionManagerAction::handle(HttpRequest* req) {
                                  Status::InvalidArgument(fmt::format("unsupport transaction operation {}", txn_op)));
     }
 
-    if (config::enable_stream_load_verbose_log && (config::enable_stream_load_status_verbose_log || !st.ok())) {
-            LOG(INFO) << "transaction streaming load request: " << req->debug_string();
-    }
     _send_reply(req, resp, st.ok());
 }
 
