@@ -326,6 +326,8 @@ bool init(const char* filename);
 // Initialize configurations from a input stream.
 bool init(std::istream& input);
 
+void load_mutable_config_timer_task(const char* filename);
+
 Status set_config(const std::string& field, const std::string& value);
 
 std::vector<ConfigInfo> list_configs();
