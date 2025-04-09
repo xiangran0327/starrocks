@@ -39,7 +39,9 @@ import com.google.common.collect.Lists;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
@@ -50,6 +52,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -78,6 +83,8 @@ public class ConfigBase {
     protected Properties props;
     protected static Field[] configFields;
     protected static Map<String, Field> allMutableConfigs = new HashMap<>();
+    private static final String MUTABLE_FILE_EXTENSION = ".mutable";
+    private ScheduledExecutorService scheduler;
 
     public void init(String propFile) throws Exception {
         configFields = this.getClass().getFields();
@@ -96,7 +103,60 @@ public class ConfigBase {
         }
         replacedByEnv();
         setFields();
+
+        startLoadMutableConfig(propFile + MUTABLE_FILE_EXTENSION);
     }
+
+    private void startLoadMutableConfig(String mutablePropFile) {
+        scheduler = Executors.newScheduledThreadPool(1);
+        scheduler.scheduleWithFixedDelay(() -> {
+            loadMutableConfig(mutablePropFile);
+        }, 0, 10, TimeUnit.SECONDS);
+    }
+
+
+    private synchronized void loadMutableConfig(String propFile) {
+        FileReader reader;
+        Field[] backFields = Arrays.copyOf(configFields, configFields.length);
+        Map<String, Field> backAllMutableConfigs = new HashMap<>(allMutableConfigs);
+        Properties newMutableProps = new Properties();
+
+        try {
+            reader = new FileReader(propFile);
+            newMutableProps.load(reader);
+        } catch (FileNotFoundException e) {
+            return;
+        } catch (IOException e) {
+            LOG.error("read config file failed", e);
+            return;
+        }
+
+        try {
+            for (String key : newMutableProps.stringPropertyNames()) {
+                String newMutableValue = newMutableProps.getProperty(key);
+                Field field = allMutableConfigs.get(key);
+                if (field == null) {
+                    LOG.warn("Field {} is not mutable or does not exist", key);
+                    continue;
+                }
+                String currentValue = field.get(null).toString();
+                if (!newMutableValue.equals(currentValue)) {
+                    setMutableConfig(key, newMutableValue);
+                }
+            }
+        } catch (Exception e) {
+            configFields = backFields;
+            allMutableConfigs = backAllMutableConfigs;
+            LOG.error("reload conf error: ", e);
+        } finally {
+            try {
+                reader.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
 
     public static void initAllMutableConfigs() {
         for (Field field : configFields) {

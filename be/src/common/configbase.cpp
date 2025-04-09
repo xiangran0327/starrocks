@@ -30,9 +30,11 @@
 #include "common/config.h"
 #undef __IN_CONFIGBASE_CPP__
 
+#include <future>
 #include <fmt/format.h>
 
 #include "common/status.h"
+#include "http/action/update_config_action.h"
 
 namespace starrocks::config {
 
@@ -125,13 +127,15 @@ bool strtox(const std::string& valstr, MutableString& retval) {
     return true;
 }
 
-inline bool parse_key_value_pairs(std::istream& input) {
+inline bool parse_key_value_pairs(std::istream& input, bool is_mutable_conf) {
     std::string line;
     std::string key;
     std::string value;
     std::regex doris_start("^doris_");
     line.reserve(512);
     std::set<Field*> assigned_fields;
+    UpdateConfigAction* update_config = UpdateConfigAction::instance();
+
     while (input) {
         // Read one line at a time.
         std::getline(input, line);
@@ -161,10 +165,22 @@ inline bool parse_key_value_pairs(std::istream& input) {
             std::cerr << fmt::format("Duplicate assignment to config '{}', previous assignmet will be ignored\n",
                                      field->name());
         }
-        assigned_fields.insert(field);
-        if (bool r = field->set_value(kv.second); !r) {
-            std::cerr << fmt::format("Invalid value of config '{}': '{}'\n", kv.first, kv.second);
-            return false;
+
+        if (is_mutable_conf) {
+            if (field->value() != kv.second) {
+                LOG(INFO) << "Load mutale conf. Key: " << kv.first << ", Value: " << kv.second;
+                if (update_config != nullptr) {
+                    update_config->update_config(kv.first, kv.second);
+                } else {
+                    LOG(WARNING) << "UpdateConfigAction instance is null, skip update";
+                }
+            }
+        } else {
+            assigned_fields.insert(field);
+            if (bool r = field->set_value(kv.second); !r) {
+                std::cerr << fmt::format("Invalid value of config '{}': '{}'\n", kv.first, kv.second);
+                return false;
+            }
         }
     }
     return true;
@@ -177,6 +193,26 @@ std::optional<Field*> Field::get(const std::string& name_or_alias) {
         ret.emplace(it->second);
     }
     return ret;
+}
+
+bool load_mutable_config(const char* mutable_filename) {
+    std::ifstream input;
+    if (mutable_filename != nullptr) {
+        input.open(mutable_filename);
+        if (input.fail()) {
+            LOG(WARNING) << "load mutable config fail:" << mutable_filename;
+            return false;
+        }
+    }
+    return parse_key_value_pairs(input, true);
+}
+
+void load_mutable_config_timer_task(const char* filename) {
+    while (true) {
+        std::string mutable_filename = std::string(filename) + ".mutable";
+        load_mutable_config(mutable_filename.c_str());
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+    }
 }
 
 bool Field::set_value(std::string value) {
@@ -214,8 +250,7 @@ bool init(std::istream& input) {
     if (!init_from_default_values()) {
         return false;
     }
-
-    return parse_key_value_pairs(input);
+    return parse_key_value_pairs(input, false);
 }
 
 Status set_config(const std::string& field, const std::string& value) {
@@ -229,6 +264,7 @@ Status set_config(const std::string& field, const std::string& value) {
     if (!it->second->set_value(value)) {
         return Status::InvalidArgument(fmt::format("Invalid value of config '{}': '{}'", field, value));
     }
+    LOG(INFO) << "set_config status ok";
     return Status::OK();
 }
 

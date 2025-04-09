@@ -24,5 +24,5 @@ class ExecEnv;
 extern std::atomic<bool> k_starrocks_exit;
 extern std::atomic<bool> k_starrocks_exit_quick;
 
-void start_be(const std::vector<StorePath>& paths, bool as_cn);
+void start_be(const std::vector<StorePath>& paths, bool as_cn, const char* filename);
 } // namespace starrocks

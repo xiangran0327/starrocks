@@ -107,7 +107,7 @@ StorageEngine* init_storage_engine(GlobalEnv* global_env, std::vector<StorePath>
 
 extern void shutdown_tracer();
 
-void start_be(const std::vector<StorePath>& paths, bool as_cn) {
+void start_be(const std::vector<StorePath>& paths, bool as_cn, const char* conffile) {
     int start_step = 1;
 
     auto daemon = std::make_unique<Daemon>();
@@ -220,6 +220,9 @@ void start_be(const std::vector<StorePath>& paths, bool as_cn) {
     LOG(INFO) << "BE start step " << start_step++ << ": start heartbeat server successfully";
 
     LOG(INFO) << "BE started successfully";
+
+    std::thread timer_thread = std::thread(starrocks::config::load_mutable_config_timer_task, conffile);
+    timer_thread.detach();
 
     while (!(k_starrocks_exit.load()) && !(k_starrocks_exit_quick.load())) {
         sleep(1);
