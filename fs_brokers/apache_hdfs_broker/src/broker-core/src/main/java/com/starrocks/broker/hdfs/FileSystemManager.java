@@ -225,6 +225,7 @@ public class FileSystemManager {
             throw new BrokerException(TBrokerOperationStatusCode.INVALID_INPUT_FILE_PATH,
                     "invalid path. scheme is null");
         }
+        setCallerContext(getStarrocksCallerContext(properties));
         BrokerFileSystem brokerFileSystem = null;
         if (scheme.equals(HDFS_SCHEME) || scheme.equals(VIEWFS_SCHEME)) {
             brokerFileSystem = getDistributedFileSystem(scheme, path, properties);
@@ -247,6 +248,44 @@ public class FileSystemManager {
             brokerFileSystem = getUniversalFileSystem(path, properties);
         }
         return brokerFileSystem;
+    }
+
+    private String getStarrocksCallerContext(Map<String, String> properties) {
+        String platform = properties.get("platform");
+        String bzlUser = properties.get("bzlUser");
+        String label = properties.get("label");
+
+        return String.format("platform:%s, bzlUser:%s, starrocks_load_label:%s",
+                platform != null ? platform : "null",
+                bzlUser != null ? bzlUser : "null",
+                label != null ? label : "null");
+    }
+
+    private void setCallerContext(String callerContext) {
+        if (callerContext == null || callerContext.isEmpty() || !callerContextSupported()) {
+            return;
+        }
+
+        try {
+            Class<?> callerContextClass = Class.forName("org.apache.hadoop.ipc.CallerContext");
+            Class<?> builder = Class.forName("org.apache.hadoop.ipc.CallerContext$Builder");
+            Object builderInst = builder.getConstructor(String.class).newInstance(callerContext);
+            Object starrocksContext = builder.getMethod("build").invoke(builderInst);
+            callerContextClass.getMethod("setCurrent", callerContextClass).invoke(null, starrocksContext);
+        } catch (Exception e) {
+            logger.warn("Failed to set Starrocks caller context. caused by " + e);
+        }
+    }
+
+    private boolean callerContextSupported() {
+        try {
+            Class.forName("org.apache.hadoop.ipc.CallerContext");
+            Class.forName("org.apache.hadoop.ipc.CallerContext$Builder");
+            return true;
+        } catch (Exception e) {
+            logger.warn("Failed to load Starrocks CallerContext class. caused by " + e);
+            return false;
+        }
     }
 
     /**

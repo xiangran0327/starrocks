@@ -61,11 +61,13 @@ import com.starrocks.thrift.TTabletInternalParallelMode;
 import com.starrocks.thrift.TWorkGroup;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SetStmtAnalyzer {
+    private static Logger logger = Logger.getLogger(SetStmtAnalyzer.class);
     public static void analyze(SetStmt setStmt, ConnectContext session) {
         List<SetListItem> setVars = setStmt.getSetListItems();
         for (SetListItem var : setVars) {
