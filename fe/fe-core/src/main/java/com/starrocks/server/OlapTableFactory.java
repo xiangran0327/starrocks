@@ -160,8 +160,7 @@ public class OlapTableFactory implements AbstractTableFactory {
         Preconditions.checkNotNull(distributionDesc);
         DistributionInfo distributionInfo = distributionDesc.toDistributionInfo(baseSchema);
 
-        HashDistributionInfo hashDistributionInfo = (HashDistributionInfo) distributionInfo;
-        int bucketNum = hashDistributionInfo.getBucketNum();
+        int bucketNum = distributionInfo.getBucketNum();
         MetricRepo.GAUGE_CREATE_TABLE_BUCKET_NUM.setValue((long) bucketNum);
         if (bucketNum >= Config.max_create_bucket_warning_num) {
             LOG.warn("Create table bucket num over {},db_name: {},table_name: {},bucket_num: {}",
