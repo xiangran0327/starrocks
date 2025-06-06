@@ -619,8 +619,14 @@ public class StmtExecutor {
                     throw new AnalysisException("old planner does not support CTAS statement");
                 }
             } else if (parsedStmt instanceof DmlStmt) {
+                if (Config.enable_sql_blacklist) {
+                    SqlBlackList.verifying(parsedStmt.getOrigStmt().originStmt);
+                }
                 handleDMLStmtWithProfile(execPlan, (DmlStmt) parsedStmt);
             } else if (parsedStmt instanceof DdlStmt) {
+                if (Config.enable_sql_blacklist) {
+                    SqlBlackList.verifying(parsedStmt.getOrigStmt().originStmt);
+                }
                 handleDdlStmt();
             } else if (parsedStmt instanceof ShowStmt) {
                 handleShow();
