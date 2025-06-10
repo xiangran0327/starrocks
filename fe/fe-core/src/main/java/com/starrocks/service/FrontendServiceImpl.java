@@ -74,6 +74,8 @@ import com.starrocks.common.CaseSensibility;
 import com.starrocks.common.Config;
 import com.starrocks.common.DdlException;
 import com.starrocks.common.DuplicatedRequestException;
+import com.starrocks.common.ErrorCode;
+import com.starrocks.common.ErrorReport;
 import com.starrocks.common.LabelAlreadyUsedException;
 import com.starrocks.common.MetaNotFoundException;
 import com.starrocks.common.Pair;
@@ -1596,9 +1598,11 @@ public class FrontendServiceImpl implements FrontendService.Iface {
         if (Strings.isNullOrEmpty(cluster)) {
             cluster = SystemInfoService.DEFAULT_CLUSTER;
         }
+        String dbName = request.getDb();
+        String tableName = request.getTbl();
+        verifyStreamLoad(dbName, tableName);
 
         GlobalStateMgr globalStateMgr = GlobalStateMgr.getCurrentState();
-        String dbName = request.getDb();
         Database db = globalStateMgr.getDb(dbName);
         if (db == null) {
             throw new UserException("unknown database, database=" + dbName);
@@ -1655,6 +1659,25 @@ public class FrontendServiceImpl implements FrontendService.Iface {
             return plan;
         } finally {
             db.readUnlock();
+        }
+    }
+
+    private void verifyStreamLoad(String dbName, String tableName) throws AnalysisException {
+        String streamLoadBlackList = Config.stream_load_black_list;
+        if (streamLoadBlackList.trim().isEmpty()) {
+            return;
+        }
+        String fullTableName = dbName + "." + tableName;
+        String[] blackItems = streamLoadBlackList.split("\\s*[,;]\\s*");
+
+        for (String item : blackItems) {
+            if (item.trim().isEmpty()) {
+                continue;
+            }
+            String normalizedItem = item.trim();
+            if (fullTableName.equals(normalizedItem)) {
+                ErrorReport.reportAnalysisException(ErrorCode.ERR_SQL_IN_STREAM_LOAD_BLACKLIST_ERROR);
+            }
         }
     }
 

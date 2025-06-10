@@ -114,6 +114,10 @@ public enum ErrorCode {
     ERR_ACCESS_DENIED(1252, new byte[] {'4', '2', '0', '0', '0'},
             "Access denied; you need (at least one of) the %s privilege(s) on %s%s for this operation"),
 
+    ERR_SQL_IN_STREAM_LOAD_BLACKLIST_ERROR(1253, new byte[] {'4', '2', '0', '0', '0'},
+            "Access denied; This sql is in stream load blacklist, please contact your admin"),
+
+
     ERR_UNKNOWN_STORAGE_ENGINE(1286, new byte[] {'4', '2', '0', '0', '0'}, "Unknown storage engine '%s'"),
     ERR_UNKNOWN_TIME_ZONE(1298, new byte[] {'H', 'Y', '0', '0', '0'}, "Unknown or incorrect time zone: '%s'"),
     ERR_WRONG_OBJECT(1347, new byte[] {'H', 'Y', '0', '0', '0'}, "'%s'.'%s' is not '%s'"),

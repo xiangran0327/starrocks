@@ -2813,4 +2813,7 @@ public class Config extends ConfigBase {
 
     @ConfField(mutable = true)
     public static int max_create_bucket_warning_num = 200;
+
+    @ConfField(mutable = true)
+    public static String stream_load_black_list = "";
 }
