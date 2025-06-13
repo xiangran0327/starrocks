@@ -117,6 +117,8 @@ public enum ErrorCode {
     ERR_SQL_IN_STREAM_LOAD_BLACKLIST_ERROR(1253, new byte[] {'4', '2', '0', '0', '0'},
             "Access denied; This sql is in stream load blacklist, please contact your admin"),
 
+    ERR_SQL_IN_BROKER_LOAD_BLACKLIST_ERROR(1254, new byte[] {'4', '2', '0', '0', '0'},
+            "Access denied; This sql is in broker load blacklist, please contact your admin"),
 
     ERR_UNKNOWN_STORAGE_ENGINE(1286, new byte[] {'4', '2', '0', '0', '0'}, "Unknown storage engine '%s'"),
     ERR_UNKNOWN_TIME_ZONE(1298, new byte[] {'H', 'Y', '0', '0', '0'}, "Unknown or incorrect time zone: '%s'"),

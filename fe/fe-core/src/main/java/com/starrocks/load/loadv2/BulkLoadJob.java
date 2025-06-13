@@ -43,7 +43,11 @@ import com.starrocks.analysis.BrokerDesc;
 import com.starrocks.catalog.AuthorizationInfo;
 import com.starrocks.catalog.Database;
 import com.starrocks.catalog.Table;
+import com.starrocks.common.AnalysisException;
+import com.starrocks.common.Config;
 import com.starrocks.common.DdlException;
+import com.starrocks.common.ErrorCode;
+import com.starrocks.common.ErrorReport;
 import com.starrocks.common.MetaNotFoundException;
 import com.starrocks.common.io.Text;
 import com.starrocks.common.util.LogBuilder;
@@ -140,6 +144,7 @@ public abstract class BulkLoadJob extends LoadJob {
                     brokerDesc.getProperties().put("label", label);
                     bulkLoadJob = new BrokerLoadJob(db.getId(), label,
                             brokerDesc, stmt.getOrigStmt(), context);
+
                     break;
                 case SPARK:
                     bulkLoadJob = new SparkLoadJob(db.getId(), stmt.getLabel().getLabelName(),
@@ -163,9 +168,32 @@ public abstract class BulkLoadJob extends LoadJob {
                         Long.toString(bulkLoadJob.logRejectedRecordNum));
             }
             bulkLoadJob.checkAndSetDataSourceInfo(db, stmt.getDataDescriptions());
+
+            Set<String> tableNames = bulkLoadJob.getTableNames(false);
+            verifyBrokerLoad(dbName, tableNames);
             return bulkLoadJob;
-        } catch (MetaNotFoundException e) {
+        } catch (MetaNotFoundException | AnalysisException e) {
             throw new DdlException(e.getMessage());
+        }
+    }
+
+    private static void verifyBrokerLoad(String dbName, Set<String> tableNames) throws AnalysisException {
+        String brokerLoadBlackList = Config.broker_load_black_list;
+
+        if (brokerLoadBlackList == null || brokerLoadBlackList.trim().isEmpty()) {
+            return;
+        }
+
+        String[] blackItems = brokerLoadBlackList.split("\\s*[,;]\\s*");
+        for (String tableName : tableNames) {
+            String fullTableName = dbName + "." + tableName;
+
+            for (String item : blackItems) {
+                String normalizedItem = item.trim();
+                if (!normalizedItem.isEmpty() && fullTableName.equals(normalizedItem)) {
+                    ErrorReport.reportAnalysisException(ErrorCode.ERR_SQL_IN_BROKER_LOAD_BLACKLIST_ERROR);
+                }
+            }
         }
     }
 

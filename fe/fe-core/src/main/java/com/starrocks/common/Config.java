@@ -2816,4 +2816,7 @@ public class Config extends ConfigBase {
 
     @ConfField(mutable = true)
     public static String stream_load_black_list = "";
+
+    @ConfField(mutable = true)
+    public static String broker_load_black_list = "";
 }
