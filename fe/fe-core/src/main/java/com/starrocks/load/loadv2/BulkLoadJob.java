@@ -183,20 +183,40 @@ public abstract class BulkLoadJob extends LoadJob {
         if (brokerLoadBlackList == null || brokerLoadBlackList.trim().isEmpty()) {
             return;
         }
-
         String[] blackItems = brokerLoadBlackList.split("\\s*[,;]\\s*");
+
+        for (String item : blackItems) {
+            String normalizedItem = item.trim();
+            if (normalizedItem.isEmpty()) {
+                continue;
+            }
+            if (normalizedItem.endsWith(".*")) {
+                String dbPattern = normalizedItem.substring(0, normalizedItem.length() - 2);
+                if (dbName.equals(dbPattern)) {
+                    LOG.info("Hit the broker load blacklist by database pattern, db:{}", dbName);
+                    ErrorReport.reportAnalysisException(ErrorCode.ERR_SQL_IN_BROKER_LOAD_BLACKLIST_ERROR);
+                }
+            }
+        }
+
         for (String tableName : tableNames) {
             String fullTableName = dbName + "." + tableName;
-
             for (String item : blackItems) {
                 String normalizedItem = item.trim();
-                if (!normalizedItem.isEmpty() && fullTableName.equals(normalizedItem)) {
-                    LOG.info("Hit the broker blacklist, db:{}, table:{}", dbName, tableName);
+                if (normalizedItem.isEmpty()) {
+                    continue;
+                }
+                if (normalizedItem.endsWith(".*")) {
+                    continue;
+                }
+                if (fullTableName.equals(normalizedItem)) {
+                    LOG.info("Hit the broker load blacklist, db:{}, table:{}", dbName, tableName);
                     ErrorReport.reportAnalysisException(ErrorCode.ERR_SQL_IN_BROKER_LOAD_BLACKLIST_ERROR);
                 }
             }
         }
     }
+
 
     private void checkAndSetDataSourceInfo(Database db, List<DataDescription> dataDescriptions) throws DdlException {
         // check data source info

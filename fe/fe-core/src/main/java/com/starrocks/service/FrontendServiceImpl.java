@@ -1664,7 +1664,8 @@ public class FrontendServiceImpl implements FrontendService.Iface {
 
     private void verifyStreamLoad(String dbName, String tableName) throws AnalysisException {
         String streamLoadBlackList = Config.stream_load_black_list;
-        if (streamLoadBlackList.trim().isEmpty()) {
+
+        if (streamLoadBlackList == null || streamLoadBlackList.trim().isEmpty()) {
             return;
         }
         String fullTableName = dbName + "." + tableName;
@@ -1675,7 +1676,13 @@ public class FrontendServiceImpl implements FrontendService.Iface {
                 continue;
             }
             String normalizedItem = item.trim();
-            if (fullTableName.equals(normalizedItem)) {
+            if (normalizedItem.endsWith(".*")) {
+                String dbPattern = normalizedItem.substring(0, normalizedItem.length() - 2);
+                if (dbName.equals(dbPattern)) {
+                    LOG.info("Hit the stream load blacklist by database pattern, db:{}, table:{}", dbName, tableName);
+                    ErrorReport.reportAnalysisException(ErrorCode.ERR_SQL_IN_STREAM_LOAD_BLACKLIST_ERROR);
+                }
+            } else if (fullTableName.equals(normalizedItem)) {
                 LOG.info("Hit the stream load blacklist, db:{}, table:{}", dbName, tableName);
                 ErrorReport.reportAnalysisException(ErrorCode.ERR_SQL_IN_STREAM_LOAD_BLACKLIST_ERROR);
             }
