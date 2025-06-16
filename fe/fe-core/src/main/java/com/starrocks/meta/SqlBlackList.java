@@ -18,6 +18,8 @@ package com.starrocks.meta;
 import com.starrocks.common.AnalysisException;
 import com.starrocks.common.ErrorCode;
 import com.starrocks.common.ErrorReport;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +30,7 @@ import java.util.regex.Pattern;
 
 // Used by sql's blacklist
 public class SqlBlackList {
+    private static final Logger LOG = LogManager.getLogger(SqlBlackList.class);
     private static final SqlBlackList INSTANCE = new SqlBlackList();
 
     public static SqlBlackList getInstance() {
@@ -39,6 +42,7 @@ public class SqlBlackList {
         for (BlackListSql patternAndId : getInstance().sqlBlackListMap.values()) {
             Matcher m = patternAndId.pattern.matcher(formatSql);
             if (m.find()) {
+                LOG.info("Hit the sql blacklist, sql:{}, pattern: {}", sql, patternAndId.pattern.toString());
                 ErrorReport.reportAnalysisException(ErrorCode.ERR_SQL_IN_BLACKLIST_ERROR);
             }
         }

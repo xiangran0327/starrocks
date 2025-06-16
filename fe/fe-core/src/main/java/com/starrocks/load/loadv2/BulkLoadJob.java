@@ -191,6 +191,7 @@ public abstract class BulkLoadJob extends LoadJob {
             for (String item : blackItems) {
                 String normalizedItem = item.trim();
                 if (!normalizedItem.isEmpty() && fullTableName.equals(normalizedItem)) {
+                    LOG.info("Hit the broker blacklist, db:{}, table:{}", dbName, tableName);
                     ErrorReport.reportAnalysisException(ErrorCode.ERR_SQL_IN_BROKER_LOAD_BLACKLIST_ERROR);
                 }
             }

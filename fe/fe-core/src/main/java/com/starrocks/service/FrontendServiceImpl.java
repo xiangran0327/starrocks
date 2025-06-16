@@ -1676,6 +1676,7 @@ public class FrontendServiceImpl implements FrontendService.Iface {
             }
             String normalizedItem = item.trim();
             if (fullTableName.equals(normalizedItem)) {
+                LOG.info("Hit the stream load blacklist, db:{}, table:{}", dbName, tableName);
                 ErrorReport.reportAnalysisException(ErrorCode.ERR_SQL_IN_STREAM_LOAD_BLACKLIST_ERROR);
             }
         }
