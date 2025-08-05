@@ -54,6 +54,7 @@ import com.starrocks.catalog.ScalarType;
 import com.starrocks.catalog.Tablet;
 import com.starrocks.cluster.Cluster;
 import com.starrocks.common.AnalysisException;
+import com.starrocks.common.Config;
 import com.starrocks.common.DdlException;
 import com.starrocks.common.FeConstants;
 import com.starrocks.common.Pair;
@@ -95,9 +96,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
@@ -977,6 +980,18 @@ public class SystemInfoService implements GsonPostProcessable {
      * @return empty list if not enough node, otherwise return a list of node's id
      */
     private synchronized List<Long> seqChooseNodeIds(int nodeNum, boolean isCreate, final List<ComputeNode> srcNodes) {
+        String[] blackBeList = Config.create_tablet_black_be_list.split(",");
+        Set<String> blackSet = new HashSet<>(Arrays.asList(blackBeList));
+        blackSet.removeIf(s -> s == null || s.trim().isEmpty());
+
+        List<ComputeNode> newSrcNodes = new ArrayList<>();
+        for (ComputeNode node : srcNodes) {
+            if (blackSet.contains(node.getHost()) || blackSet.contains(String.valueOf(node.getId()))) {
+                continue;
+            }
+            newSrcNodes.add(node);
+        }
+
         long lastNodeId;
 
         if (isCreate) {
@@ -987,7 +1002,7 @@ public class SystemInfoService implements GsonPostProcessable {
 
         // host -> BE list
         Map<String, List<ComputeNode>> nodeMaps = Maps.newHashMap();
-        for (ComputeNode node : srcNodes) {
+        for (ComputeNode node : newSrcNodes) {
             String host = node.getHost();
 
             if (!nodeMaps.containsKey(host)) {
@@ -1058,6 +1073,9 @@ public class SystemInfoService implements GsonPostProcessable {
             lastNodeIdForCreation = lastNodeId;
         } else {
             lastNodeIdForOther = lastNodeId;
+        }
+        for (long node : nodeIds) {
+            LOG.info("node id: {}", node);
         }
         return nodeIds;
     }

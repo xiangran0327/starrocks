@@ -2819,4 +2819,7 @@ public class Config extends ConfigBase {
 
     @ConfField(mutable = true)
     public static String broker_load_black_list = "";
+
+    @ConfField(mutable = true)
+    public static String create_tablet_black_be_list = "";
 }
