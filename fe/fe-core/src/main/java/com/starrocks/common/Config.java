@@ -2822,4 +2822,7 @@ public class Config extends ConfigBase {
 
     @ConfField(mutable = true)
     public static String create_tablet_black_be_list = "";
+
+    @ConfField(mutable = true)
+    public static boolean enable_balance_log = false;
 }

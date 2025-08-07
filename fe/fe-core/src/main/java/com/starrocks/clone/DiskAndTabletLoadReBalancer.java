@@ -86,10 +86,20 @@ public class DiskAndTabletLoadReBalancer extends Rebalancer {
         do {
             // balance cluster
             if (!isClusterDiskBalanced(clusterStat, medium)) {
-                alternativeTablets = balanceClusterDisk(clusterStat, medium);
+                try {
+                    alternativeTablets = balanceClusterDisk(clusterStat, medium);
+                } catch (Exception e) {
+                    LOG.error("Failed to balance cluster disk", e);
+                    alternativeTablets = Collections.emptyList();
+                }
                 balanceType = "cluster disk";
             } else {
-                alternativeTablets = balanceClusterTablet(clusterStat, medium);
+                try {
+                    alternativeTablets = balanceClusterTablet(clusterStat, medium);
+                } catch (Exception e) {
+                    LOG.error("Failed to balance cluster tablet", e);
+                    alternativeTablets = Collections.emptyList();
+                }
                 balanceType = "cluster tablet distribution";
             }
             if (!alternativeTablets.isEmpty()) {
@@ -1925,7 +1935,16 @@ public class DiskAndTabletLoadReBalancer extends Rebalancer {
                 if (replica == null) {
                     continue;
                 }
-                int sortIndex = pathSortIndex.get(replica.getPathHash());
+
+                Integer sortIndex = pathSortIndex.get(replica.getPathHash());
+                if (sortIndex == null) {
+                    if (Config.enable_balance_log) {
+                        LOG.error("getTabletsInHighLoadPath sortIndex is null, backendId:{}, tabletId:{}, pathHash:{}",
+                                this.backendId, tabletId, replica.getPathHash());
+                    }
+                    continue;
+                }
+
                 if (sortIndex > lastHighLoadIndex) {
                     continue;
                 }
