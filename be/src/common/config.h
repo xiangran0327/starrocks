@@ -156,7 +156,7 @@ CONF_mInt32(clear_expired_replication_snapshots_interval_seconds, "3600");
 // The log dir.
 CONF_String(sys_log_dir, "${STARROCKS_HOME}/log");
 // The user function dir.
-CONF_String(user_function_dir, "${STARROCKS_HOME}/lib/udf");
+CONF_String(user_function_dir, "/data/olap/starrocks/udf");
 // The sys log level, INFO, WARNING, ERROR, FATAL.
 CONF_mString(sys_log_level, "INFO");
 // TIME-DAY, TIME-HOUR, SIZE-MB-nnn
