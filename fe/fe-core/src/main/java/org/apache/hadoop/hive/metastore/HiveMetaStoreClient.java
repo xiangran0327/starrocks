@@ -115,6 +115,7 @@ import org.apache.hadoop.hive.metastore.api.SchemaVersion;
 import org.apache.hadoop.hive.metastore.api.SchemaVersionState;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.metastore.api.SetPartitionsStatsRequest;
+import org.apache.hadoop.hive.metastore.api.SetUgiRequest;
 import org.apache.hadoop.hive.metastore.api.ShowCompactResponse;
 import org.apache.hadoop.hive.metastore.api.ShowLocksRequest;
 import org.apache.hadoop.hive.metastore.api.ShowLocksResponse;
@@ -558,7 +559,21 @@ public class HiveMetaStoreClient implements IMetaStoreClient, AutoCloseable {
                             if (ugi == null) {
                                 ugi = SecurityUtils.getUGI();
                             }
-                            client.set_ugi(ugi.getUserName(), Arrays.asList(ugi.getGroupNames()));
+
+                            //client.set_ugi(ugi.getUserName(), Arrays.asList(ugi.getGroupNames()));
+                            SetUgiRequest setUgiRequest =
+                                    new SetUgiRequest(ugi.getUserName(), Arrays.asList(ugi.getGroupNames()));
+                            UserGroupInformation realUser = ugi.getRealUser();
+                            if (realUser != null) {
+                                String realUserName = realUser.getUserName();
+                                setUgiRequest.setReal_user(realUserName);
+                            }
+                            String hadoopBzlToken = ugi.getSubjectBzltoken();
+
+                            if (hadoopBzlToken != null) {
+                                setUgiRequest.setBzltoken(hadoopBzlToken);
+                            }
+                            client.set_ugi_with_token(setUgiRequest);
                         } catch (LoginException e) {
                             LOG.warn("Failed to do login. set_ugi() is not successful, " +
                                     "Continuing without it.", e);
