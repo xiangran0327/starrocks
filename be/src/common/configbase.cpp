@@ -236,6 +236,18 @@ bool init(const char* filename) {
     return init(input);
 }
 
+bool init_mutable_conf(const char* filename) {
+    std::ifstream input;
+    if (filename != nullptr) {
+        input.open(filename);
+        if (input.fail()) {
+            std::cerr << "Fail to open " << filename << std::endl;
+            return false;
+        }
+    }
+    return parse_key_value_pairs(input, false);
+}
+
 inline bool init_from_default_values() {
     for (const auto& [name, field] : Field::fields()) {
         if (!field->set_value(field->defval())) {

@@ -323,6 +323,8 @@ private:
 // Initialize configurations from a config file.
 bool init(const char* filename);
 
+bool init_mutable_conf(const char* filename);
+
 // Initialize configurations from a input stream.
 bool init(std::istream& input);
 

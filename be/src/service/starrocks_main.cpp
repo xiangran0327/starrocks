@@ -179,6 +179,11 @@ int main(int argc, char** argv) {
         return -1;
     }
 
+    std::string mutable_conffile = std::string(conffile) + ".mutable";
+    if (!starrocks::config::init_mutable_conf(mutable_conffile.c_str())) {
+        fprintf(stderr, "error read mutable config file. \n");
+    }
+
 #if defined(ENABLE_STATUS_FAILED)
     // read range of source code for inject errors.
     starrocks::Status::access_directory_of_inject();
