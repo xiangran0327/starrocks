@@ -78,7 +78,6 @@ const static std::string HEADER_JSON = "application/json";
 std::atomic<UpdateConfigAction*> UpdateConfigAction::_instance(nullptr);
 
 Status UpdateConfigAction::update_config(const std::string& name, const std::string& value) {
-    LOG(INFO) << "start upate config " << name << " " << value;
     std::call_once(_once_flag, [&]() {
         _config_callback.emplace("scanner_thread_pool_thread_num", [&]() {
             LOG(INFO) << "set scanner_thread_pool_thread_num:" << config::scanner_thread_pool_thread_num;

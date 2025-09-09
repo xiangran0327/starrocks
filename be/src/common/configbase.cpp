@@ -168,7 +168,6 @@ inline bool parse_key_value_pairs(std::istream& input, bool is_mutable_conf) {
 
         if (is_mutable_conf) {
             if (field->value() != kv.second) {
-                LOG(INFO) << "Load mutale conf. Key: " << kv.first << ", Value: " << kv.second;
                 if (update_config != nullptr) {
                     update_config->update_config(kv.first, kv.second);
                 } else {
@@ -276,7 +275,6 @@ Status set_config(const std::string& field, const std::string& value) {
     if (!it->second->set_value(value)) {
         return Status::InvalidArgument(fmt::format("Invalid value of config '{}': '{}'", field, value));
     }
-    LOG(INFO) << "set_config status ok";
     return Status::OK();
 }
 
