@@ -2825,4 +2825,7 @@ public class Config extends ConfigBase {
 
     @ConfField(mutable = true)
     public static boolean enable_balance_log = false;
+
+    @ConfField(mutable = false)
+    public static String fe_mutable_conf_path = "/etc/olap/starrocks/starrocksfe/dynamic.current/fe.conf.mutable";
 }

@@ -83,7 +83,6 @@ public class ConfigBase {
     protected Properties props;
     protected static Field[] configFields;
     protected static Map<String, Field> allMutableConfigs = new HashMap<>();
-    private static final String MUTABLE_FILE_EXTENSION = ".mutable";
     private ScheduledExecutorService scheduler;
 
     public void init(String propFile) throws Exception {
@@ -104,7 +103,7 @@ public class ConfigBase {
         replacedByEnv();
         setFields();
 
-        startLoadMutableConfig(propFile + MUTABLE_FILE_EXTENSION);
+        startLoadMutableConfig(Config.fe_mutable_conf_path);
     }
 
     private void startLoadMutableConfig(String mutablePropFile) {

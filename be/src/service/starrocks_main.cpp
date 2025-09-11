@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    std::string mutable_conffile = std::string(conffile) + ".mutable";
+    std::string mutable_conffile = starrocks::config::directory_of_be_mutable_conf;
     if (!starrocks::config::init_mutable_conf(mutable_conffile.c_str())) {
         fprintf(stderr, "error read mutable config file. \n");
     }
