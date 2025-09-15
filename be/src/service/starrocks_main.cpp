@@ -243,11 +243,8 @@ int main(int argc, char** argv) {
     // Add logger for thrift internal.
     apache::thrift::GlobalOutput.setOutputFunction(starrocks::thrift_output);
 
-
-
-
     // cn need to support all ops for cloudnative table, so just start_be
-    starrocks::start_be(paths, as_cn, conffile.c_str());
+    starrocks::start_be(paths, as_cn, mutable_conffile.c_str());
 
     if (starrocks::k_starrocks_exit_quick.load()) {
         LOG(INFO) << "BE is shutting down，will exit quickly";

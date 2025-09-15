@@ -208,8 +208,7 @@ bool load_mutable_config(const char* mutable_filename) {
 
 void load_mutable_config_timer_task(const char* filename) {
     while (true) {
-        std::string mutable_filename = std::string(filename) + ".mutable";
-        load_mutable_config(mutable_filename.c_str());
+        load_mutable_config(filename);
         std::this_thread::sleep_for(std::chrono::seconds(10));
     }
 }
