@@ -83,3 +83,4 @@ be/tags
 build/
 cmake-build-debug/
 CMakeLists.txt
+/fe/fe-core/src/main/java/com/starrocks/thrift/
