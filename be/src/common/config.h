@@ -1191,4 +1191,6 @@ CONF_mInt32(unused_crm_file_threshold_second, "86400" /** 1day **/);
 CONF_mBool(apply_del_vec_after_all_index_filter, "true");
 
 CONF_String(directory_of_be_mutable_conf,"/etc/olap/starrocks/starrocksbe/dynamic.current/be.conf.mutable");
+
+CONF_mInt64(alarm_tablet_data_size, "1073741824");
 } // namespace starrocks::config

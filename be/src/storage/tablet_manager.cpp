@@ -949,6 +949,11 @@ Status TabletManager::report_all_tablets_info(std::map<TTabletId, TTablet>* tabl
             TTablet t_tablet;
             TTabletInfo tablet_info;
             tablet_ptr->build_tablet_report_info(&tablet_info);
+            // add check for data_size
+            if (tablet_info.data_size > config::alarm_tablet_data_size) {
+                LOG(INFO) << "Tablet " << tablet_id << " in partition " << tablet_info.partition_id
+                    << " has data_size: " << tablet_info.data_size;
+            }
             max_tablet_rowset_num = std::max(max_tablet_rowset_num, tablet_ptr->version_count());
             // find expired transaction corresponding to this tablet
             TabletInfo tinfo(tablet_id, tablet_ptr->schema_hash(), tablet_ptr->tablet_uid());
