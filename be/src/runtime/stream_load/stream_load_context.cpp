@@ -62,9 +62,21 @@ std::string StreamLoadContext::to_resp_json(const std::string& txn_op, const Sta
     writer.Key("Message");
     writer.String(st.get_error_msg().c_str());
 
-    // db table
+    // timeStamp
+    auto timestamp_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::system_clock::now().time_since_epoch()).count();
+    writer.Key("TimeStamp");
+    writer.Int64(timestamp_ms);
+
+    // cluster
+    writer.Key("Cluster");
+    writer.String(config::cluster_name.c_str());
+
+    // db
     writer.Key("Db");
     writer.String(db.c_str());
+
+    // table
     writer.Key("Table");
     writer.String(table.c_str());
 
@@ -143,9 +155,21 @@ std::string StreamLoadContext::to_json() const {
     writer.Key("Label");
     writer.String(label.c_str());
 
-    // db table
+    // timeStamp
+    auto timestamp_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+           std::chrono::system_clock::now().time_since_epoch()).count();
+    writer.Key("TimeStamp");
+    writer.Int64(timestamp_ms);
+
+    // cluster
+    writer.Key("Cluster");
+    writer.String(config::cluster_name.c_str());
+
+    // db
     writer.Key("Db");
     writer.String(db.c_str());
+
+    // table
     writer.Key("Table");
     writer.String(table.c_str());
 

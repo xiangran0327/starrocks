@@ -93,7 +93,7 @@ static void _send_reply(HttpRequest* req, const std::string& str, const bool sta
         if (status) {
             LOG(WARNING) << "transaction streaming load response: " << str;
         } else {
-            LOG(INFO) << "transaction streaming load response: " << str;
+            LOG(ERROR) << "transaction streaming load response: " << str;
         }
     }
     HttpChannel::send_reply(req, str);

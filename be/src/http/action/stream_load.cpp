@@ -139,9 +139,9 @@ StreamLoadAction::~StreamLoadAction() = default;
 static void _send_reply(HttpRequest* req, const std::string& str, const bool status) {
     if (config::enable_stream_load_verbose_log && (config::enable_stream_load_verbose_log_all || !status)) {
         if (status) {
-            LOG(INFO) << "streaming load response: " << str;
-        } else {
             LOG(WARNING) << "streaming load response: " << str;
+        } else {
+            LOG(ERROR) << "streaming load response: " << str;
         }
     }
     HttpChannel::send_reply(req, str);
