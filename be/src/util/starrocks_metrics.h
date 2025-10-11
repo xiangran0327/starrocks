@@ -107,6 +107,7 @@ public:
     METRIC_DEFINE_INT_COUNTER(snapshot_download_failed_total, MetricUnit::REQUESTS);
     METRIC_DEFINE_INT_COUNTER(finish_task_failed_total, MetricUnit::REQUESTS);
     METRIC_DEFINE_INT_COUNTER(retrying_report_exec_status_total, MetricUnit::REQUESTS);
+    METRIC_DEFINE_INT_COUNTER(tablet_datasize_exceed_threshold_total, MetricUnit::REQUESTS);
 
     // counters
     METRIC_DEFINE_INT_COUNTER(fragment_requests_total, MetricUnit::REQUESTS);

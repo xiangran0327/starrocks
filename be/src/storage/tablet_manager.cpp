@@ -951,6 +951,7 @@ Status TabletManager::report_all_tablets_info(std::map<TTabletId, TTablet>* tabl
             tablet_ptr->build_tablet_report_info(&tablet_info);
             // add check for data_size
             if (tablet_info.data_size > config::alarm_tablet_data_size) {
+                StarRocksMetrics::instance()->tablet_datasize_exceed_threshold_total.increment(1);
                 LOG(INFO) << "Tablet " << tablet_id << " in partition " << tablet_info.partition_id
                     << " has data_size: " << tablet_info.data_size;
             }

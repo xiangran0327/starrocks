@@ -103,6 +103,7 @@ StarRocksMetrics::StarRocksMetrics() : _metrics(_s_registry_name) {
     REGISTER_STARROCKS_METRIC(snapshot_download_failed_total);
     REGISTER_STARROCKS_METRIC(finish_task_failed_total);
     REGISTER_STARROCKS_METRIC(retrying_report_exec_status_total);
+    REGISTER_STARROCKS_METRIC(tablet_datasize_exceed_threshold_total);
 
     // push request
     _metrics.register_metric("push_requests_total", MetricLabels().add("status", "SUCCESS"),
