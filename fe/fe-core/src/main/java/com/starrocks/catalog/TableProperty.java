@@ -331,6 +331,10 @@ public class TableProperty implements Writable, GsonPostProcessable {
     @SerializedName(value = "enableStatisticCollectOnFirstLoad")
     private boolean enableStatisticCollectOnFirstLoad = true;
 
+    // control whether query is allowed on this table.
+    // default value: true
+    private boolean enableQuery = true;
+
     /**
      * Whether to enable the v2 implementation of fast schema evolution for cloud-native tables.
      * This version is more lightweight, modifying only FE metadata instead of both FE and tablet metadata.
@@ -426,6 +430,7 @@ public class TableProperty implements Writable, GsonPostProcessable {
                 buildStorageCoolDownTTL();
                 buildEnableStatisticCollectOnFirstLoad();
                 buildCloudNativeFastSchemaEvolutionV2();
+                buildEnableQuery();
                 break;
             case OperationType.OP_MODIFY_TABLE_CONSTRAINT_PROPERTY:
                 buildConstraint();
@@ -1249,6 +1254,13 @@ public class TableProperty implements Writable, GsonPostProcessable {
         return this;
     }
 
+    public TableProperty buildEnableQuery() {
+        // default value is true when property not present
+        enableQuery = Boolean.parseBoolean(
+                properties.getOrDefault(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY, "true"));
+        return this;
+    }
+
     public TableProperty buildCloudNativeFastSchemaEvolutionV2() {
         if (properties.containsKey(PropertyAnalyzer.PROPERTIES_CLOUD_NATIVE_FAST_SCHEMA_EVOLUTION_V2)) {
             cloudNativeFastSchemaEvolutionV2 = Boolean.parseBoolean(
@@ -1259,6 +1271,10 @@ public class TableProperty implements Writable, GsonPostProcessable {
 
     public boolean isCloudNativeFastSchemaEvolutionV2() {
         return cloudNativeFastSchemaEvolutionV2;
+    }
+
+    public boolean isEnableQuery() {
+        return enableQuery;
     }
 
     @Override
@@ -1297,5 +1313,6 @@ public class TableProperty implements Writable, GsonPostProcessable {
         buildMutableBucketNum();
         buildCompactionStrategy();
         buildEnableStatisticCollectOnFirstLoad();
+        buildEnableQuery();
     }
 }

@@ -2313,6 +2313,23 @@ public class OlapTable extends Table {
         tableProperty.buildEnableStatisticCollectOnFirstLoad();
     }
 
+    public boolean isEnableQuery() {
+        if (tableProperty != null) {
+            return tableProperty.isEnableQuery();
+        }
+        // default allow query when tableProperty is null
+        return true;
+    }
+
+    public void setEnableQuery(boolean enableQuery) {
+        if (tableProperty == null) {
+            tableProperty = new TableProperty(new HashMap<>());
+        }
+        tableProperty.modifyTableProperties(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY,
+                Boolean.valueOf(enableQuery).toString());
+        tableProperty.buildEnableQuery();
+    }
+
     public boolean allowBucketSizeSetting() {
         return (defaultDistributionInfo instanceof RandomDistributionInfo) && Config.enable_automatic_bucket;
     }

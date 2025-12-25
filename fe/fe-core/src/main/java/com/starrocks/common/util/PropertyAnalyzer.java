@@ -212,6 +212,10 @@ public class PropertyAnalyzer {
     public static final String PROPERTIES_PARTITION_RETENTION_CONDITION = "partition_retention_condition";
     public static final String PROPERTIES_TIME_DRIFT_CONSTRAINT = "time_drift_constraint";
 
+    // table level switch to control whether query is allowed on this table
+    // default: true
+    public static final String PROPERTIES_ENABLE_QUERY = "enable_query";
+
     public static final String PROPERTIES_AUTO_REFRESH_PARTITIONS_LIMIT = "auto_refresh_partitions_limit";
     public static final String PROPERTIES_PARTITION_REFRESH_STRATEGY = "partition_refresh_strategy";
     public static final String PROPERTIES_PARTITION_REFRESH_NUMBER = "partition_refresh_number";
