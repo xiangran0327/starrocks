@@ -3190,7 +3190,6 @@ public class OlapTable extends Table {
                     TableProperty.compactionStrategyToString(getCompactionStrategy()));
         }
 
-        Map<String, String> tableProperties = tableProperty != null ? tableProperty.getProperties() : Maps.newLinkedHashMap();
         // partition live number
         String partitionLiveNumber = tableProperties.get(PropertyAnalyzer.PROPERTIES_PARTITION_LIVE_NUMBER);
         if (partitionLiveNumber != null) {
