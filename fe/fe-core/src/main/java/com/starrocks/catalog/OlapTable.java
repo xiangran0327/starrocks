@@ -3150,8 +3150,9 @@ public class OlapTable extends Table {
         }
 
         // enable query
-        Boolean enableQuery = isEnableQuery();
-        if (!enableQuery) {
+        Map<String, String> tableProperties = tableProperty != null ? tableProperty.getProperties() : Maps.newLinkedHashMap();
+        String enableQueryStr = tableProperties.get(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY);
+        if (enableQueryStr != null && !Boolean.parseBoolean(enableQueryStr)) {
             properties.put(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY, "false");
         }
 
