@@ -3817,13 +3817,13 @@ public class LocalMetastore implements ConnectorMetadata, MVRepairHandler, Memor
                 GlobalStateMgr.getCurrentState().getEditLog().logAlterTableProperties(info);
             }
             if (propertiesToPersist.containsKey(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY)) {
-                boolean enableQuery = (boolean) results.get(key);
+                boolean enableQuery = (boolean) results.get(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY);
                 tableProperty.getProperties()
                         .put(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY, String.valueOf(enableQuery));
                 tableProperty.buildEnableQuery();
                 ModifyTablePropertyOperationLog info =
                         new ModifyTablePropertyOperationLog(db.getId(), table.getId(),
-                                ImmutableMap.of(key, propertiesToPersist.get(key)));
+                                ImmutableMap.of(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY, propertiesToPersist.get(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY)));
                 GlobalStateMgr.getCurrentState().getEditLog().logAlterTableProperties(info);
             }
         }

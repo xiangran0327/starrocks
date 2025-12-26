@@ -3149,6 +3149,12 @@ public class OlapTable extends Table {
             properties.put(PropertyAnalyzer.PROPERTIES_ENABLE_STATISTIC_COLLECT_ON_FIRST_LOAD, "false");
         }
 
+        // enable query
+        Boolean enableQuery = isEnableQuery();
+        if (!enableQuery) {
+            properties.put(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY, "false");
+        }
+
         // base compaction forbidden time ranges
         if (!getBaseCompactionForbiddenTimeRanges().isEmpty()) {
             properties.put(PropertyAnalyzer.PROPERTIES_BASE_COMPACTION_FORBIDDEN_TIME_RANGES,
