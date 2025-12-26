@@ -3823,7 +3823,8 @@ public class LocalMetastore implements ConnectorMetadata, MVRepairHandler, Memor
                 tableProperty.buildEnableQuery();
                 ModifyTablePropertyOperationLog info =
                         new ModifyTablePropertyOperationLog(db.getId(), table.getId(),
-                                ImmutableMap.of(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY, propertiesToPersist.get(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY)));
+                                ImmutableMap.of(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY,
+                                        propertiesToPersist.get(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY)));
                 GlobalStateMgr.getCurrentState().getEditLog().logAlterTableProperties(info);
             }
         }
