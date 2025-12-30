@@ -3816,6 +3816,17 @@ public class LocalMetastore implements ConnectorMetadata, MVRepairHandler, Memor
                         ImmutableMap.of(key, propertiesToPersist.get(key)));
                 GlobalStateMgr.getCurrentState().getEditLog().logAlterTableProperties(info);
             }
+            if (propertiesToPersist.containsKey(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY)) {
+                boolean enableQuery = (boolean) results.get(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY);
+                tableProperty.getProperties()
+                        .put(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY, String.valueOf(enableQuery));
+                tableProperty.buildEnableQuery();
+                ModifyTablePropertyOperationLog info =
+                        new ModifyTablePropertyOperationLog(db.getId(), table.getId(),
+                                ImmutableMap.of(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY,
+                                        propertiesToPersist.get(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY)));
+                GlobalStateMgr.getCurrentState().getEditLog().logAlterTableProperties(info);
+            }
         }
     }
 
@@ -3888,6 +3899,11 @@ public class LocalMetastore implements ConnectorMetadata, MVRepairHandler, Memor
             } catch (AnalysisException ex) {
                 throw new RuntimeException(ex.getMessage());
             }
+        }
+        if (properties.containsKey(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY)) {
+            boolean enableQuery = PropertyAnalyzer.analyzeBooleanProp(
+                    properties, PropertyAnalyzer.PROPERTIES_ENABLE_QUERY, true);
+            results.put(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY, enableQuery);
         }
         if (properties.containsKey(PropertyAnalyzer.PROPERTIES_LABELS_LOCATION)) {
             if (table.getColocateGroup() != null) {

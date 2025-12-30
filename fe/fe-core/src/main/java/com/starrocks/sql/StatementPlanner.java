@@ -136,6 +136,8 @@ public class StatementPlanner {
                 Authorizer.check(stmt, session);
             }
             if (stmt instanceof QueryStatement) {
+                // After analysis and authorization, validate table-level enable_query property.
+                AnalyzerUtils.validateEnableQueryOnTables(stmt);
                 OptimizerTraceUtil.logQueryStatement("after analyze:\n%s", (QueryStatement) stmt);
             }
 

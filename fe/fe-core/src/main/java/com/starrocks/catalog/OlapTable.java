@@ -2313,6 +2313,23 @@ public class OlapTable extends Table {
         tableProperty.buildEnableStatisticCollectOnFirstLoad();
     }
 
+    public boolean isEnableQuery() {
+        if (tableProperty != null) {
+            return tableProperty.isEnableQuery();
+        }
+        // default allow query when tableProperty is null
+        return true;
+    }
+
+    public void setEnableQuery(boolean enableQuery) {
+        if (tableProperty == null) {
+            tableProperty = new TableProperty(new HashMap<>());
+        }
+        tableProperty.modifyTableProperties(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY,
+                Boolean.valueOf(enableQuery).toString());
+        tableProperty.buildEnableQuery();
+    }
+
     public boolean allowBucketSizeSetting() {
         return (defaultDistributionInfo instanceof RandomDistributionInfo) && Config.enable_automatic_bucket;
     }
@@ -3132,6 +3149,13 @@ public class OlapTable extends Table {
             properties.put(PropertyAnalyzer.PROPERTIES_ENABLE_STATISTIC_COLLECT_ON_FIRST_LOAD, "false");
         }
 
+        // enable query
+        Map<String, String> tableProperties = tableProperty != null ? tableProperty.getProperties() : Maps.newLinkedHashMap();
+        String enableQueryStr = tableProperties.get(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY);
+        if (enableQueryStr != null && !Boolean.parseBoolean(enableQueryStr)) {
+            properties.put(PropertyAnalyzer.PROPERTIES_ENABLE_QUERY, "false");
+        }
+
         // base compaction forbidden time ranges
         if (!getBaseCompactionForbiddenTimeRanges().isEmpty()) {
             properties.put(PropertyAnalyzer.PROPERTIES_BASE_COMPACTION_FORBIDDEN_TIME_RANGES,
@@ -3166,7 +3190,6 @@ public class OlapTable extends Table {
                     TableProperty.compactionStrategyToString(getCompactionStrategy()));
         }
 
-        Map<String, String> tableProperties = tableProperty != null ? tableProperty.getProperties() : Maps.newLinkedHashMap();
         // partition live number
         String partitionLiveNumber = tableProperties.get(PropertyAnalyzer.PROPERTIES_PARTITION_LIVE_NUMBER);
         if (partitionLiveNumber != null) {
