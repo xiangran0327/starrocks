@@ -329,6 +329,10 @@ public class StmtExecutor {
     private HttpResultSender httpResultSender;
     private PrepareStmtContext prepareStmtContext = null;
     private boolean isInternalStmt = false;
+    
+    // Store table query timeout info for error message
+    private String tableQueryTimeoutTableName = null;
+    private int tableQueryTimeoutValue = -1;
 
     private final CompletableFuture<ArrowFlightSqlResultDescriptor> deploymentFinished;
 
@@ -569,7 +573,7 @@ public class StmtExecutor {
 
     /**
      * The execution timeout varies among different statements:
-     * 1. SELECT: use query_timeout
+     * 1. SELECT: use query_timeout or table_query_timeout (if set)
      * 2. DML: use insert_timeout or statement-specified timeout
      * 3. ANALYZE: use fe_conf.statistic_collect_query_timeout
      */
@@ -597,7 +601,46 @@ public class StmtExecutor {
         } else if (parsedStmt instanceof AnalyzeStmt) {
             return (int) Config.statistic_collect_query_timeout;
         } else {
-            return ConnectContext.get().getSessionVariable().getQueryTimeoutS();
+            // For SELECT queries, check table_query_timeout property
+            int clusterQueryTimeout = ConnectContext.get().getSessionVariable().getQueryTimeoutS();
+            if (parsedStmt instanceof QueryStatement) {
+                try {
+                    Map<TableName, Table> tables = AnalyzerUtils.collectAllTable(parsedStmt);
+                    int minTableTimeout = -1;
+                    String timeoutTableName = null;
+                    for (Map.Entry<TableName, Table> entry : tables.entrySet()) {
+                        Table table = entry.getValue();
+                        if (table instanceof OlapTable) {
+                            OlapTable olapTable = (OlapTable) table;
+                            int tableTimeout = olapTable.getTableQueryTimeout();
+                            if (tableTimeout > 0) {
+                                // Use the minimum timeout among all tables
+                                if (minTableTimeout < 0 || tableTimeout < minTableTimeout) {
+                                    minTableTimeout = tableTimeout;
+                                    timeoutTableName = entry.getKey() != null ? entry.getKey().toString() : table.getName();
+                                }
+                            }
+                        }
+                    }
+                    if (minTableTimeout > 0) {
+                        // Store table timeout info for error message
+                        tableQueryTimeoutTableName = timeoutTableName;
+                        tableQueryTimeoutValue = minTableTimeout;
+                        // Use the minimum of table timeout and cluster timeout
+                        return Math.min(minTableTimeout, clusterQueryTimeout);
+                    } else {
+                        // Reset if no table timeout is set
+                        tableQueryTimeoutTableName = null;
+                        tableQueryTimeoutValue = -1;
+                    }
+                } catch (Exception e) {
+                    // If cannot collect tables (e.g., not analyzed yet), use cluster timeout
+                    LOG.debug("Cannot collect tables for table_query_timeout check, use cluster timeout", e);
+                    tableQueryTimeoutTableName = null;
+                    tableQueryTimeoutValue = -1;
+                }
+            }
+            return clusterQueryTimeout;
         }
     }
 
@@ -615,6 +658,17 @@ public class StmtExecutor {
 
     public boolean isExecLoadType() {
         return parsedStmt instanceof DmlStmt || parsedStmt instanceof CreateTableAsSelectStmt;
+    }
+
+    /**
+     * Get table query timeout info for error message
+     * @return Pair of (tableName, timeoutValue), or null if no table timeout is set
+     */
+    public Pair<String, Integer> getTableQueryTimeoutInfo() {
+        if (tableQueryTimeoutTableName != null && tableQueryTimeoutValue > 0) {
+            return Pair.create(tableQueryTimeoutTableName, tableQueryTimeoutValue);
+        }
+        return null;
     }
 
     private ExecPlan generateExecPlan() throws Exception {

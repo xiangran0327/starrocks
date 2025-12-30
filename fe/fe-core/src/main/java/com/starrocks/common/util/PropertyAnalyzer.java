@@ -212,6 +212,10 @@ public class PropertyAnalyzer {
     public static final String PROPERTIES_PARTITION_RETENTION_CONDITION = "partition_retention_condition";
     public static final String PROPERTIES_TIME_DRIFT_CONSTRAINT = "time_drift_constraint";
 
+    // table level query timeout in seconds
+    // default: same as cluster query_timeout
+    public static final String PROPERTIES_TABLE_QUERY_TIMEOUT = "table_query_timeout";
+
     public static final String PROPERTIES_AUTO_REFRESH_PARTITIONS_LIMIT = "auto_refresh_partitions_limit";
     public static final String PROPERTIES_PARTITION_REFRESH_STRATEGY = "partition_refresh_strategy";
     public static final String PROPERTIES_PARTITION_REFRESH_NUMBER = "partition_refresh_number";
@@ -1340,6 +1344,39 @@ public class PropertyAnalyzer {
             }
             properties.remove(PROPERTIES_PRIMARY_INDEX_CACHE_EXPIRE_SEC);
         }
+        return val;
+    }
+
+    /**
+     * Analyze table_query_timeout property.
+     * @param properties table properties
+     * @param clusterQueryTimeout cluster query timeout in seconds
+     * @return table query timeout in seconds, -1 means use cluster query_timeout
+     * @throws AnalysisException if the value is invalid or greater than cluster query_timeout
+     */
+    public static int analyzeTableQueryTimeout(Map<String, String> properties, int clusterQueryTimeout)
+            throws AnalysisException {
+        if (properties == null || !properties.containsKey(PROPERTIES_TABLE_QUERY_TIMEOUT)) {
+            return -1; // default: use cluster query_timeout
+        }
+        String valStr = properties.get(PROPERTIES_TABLE_QUERY_TIMEOUT);
+        int val;
+        try {
+            val = Integer.parseInt(valStr);
+            if (val <= 0) {
+                throw new AnalysisException("Property " + PROPERTIES_TABLE_QUERY_TIMEOUT
+                        + " must be greater than 0, got: " + valStr);
+            }
+            if (val > clusterQueryTimeout) {
+                throw new AnalysisException("Property " + PROPERTIES_TABLE_QUERY_TIMEOUT
+                        + " (" + val + "s) cannot be greater than cluster query_timeout ("
+                        + clusterQueryTimeout + "s)");
+            }
+        } catch (NumberFormatException e) {
+            throw new AnalysisException("Property " + PROPERTIES_TABLE_QUERY_TIMEOUT
+                    + " must be a valid integer, got: " + valStr);
+        }
+        properties.remove(PROPERTIES_TABLE_QUERY_TIMEOUT);
         return val;
     }
 

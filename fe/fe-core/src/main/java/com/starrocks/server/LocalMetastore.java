@@ -3905,6 +3905,25 @@ public class LocalMetastore implements ConnectorMetadata, MVRepairHandler, Memor
             boolean value = PropertyAnalyzer.analyzeCloudNativeFastSchemaEvolutionV2(table.getType(), properties, true);
             results.put(PropertyAnalyzer.PROPERTIES_CLOUD_NATIVE_FAST_SCHEMA_EVOLUTION_V2, value);
         }
+        if (properties.containsKey(PropertyAnalyzer.PROPERTIES_TABLE_QUERY_TIMEOUT)) {
+            try {
+                // Get cluster query_timeout from current session or use default value
+                int clusterQueryTimeout = 300; // Default value from SessionVariable
+                try {
+                    com.starrocks.qe.ConnectContext ctx = com.starrocks.qe.ConnectContext.get();
+                    if (ctx != null && ctx.getSessionVariable() != null) {
+                        clusterQueryTimeout = ctx.getSessionVariable().getQueryTimeoutS();
+                    }
+                } catch (Exception e) {
+                    // If cannot get from context, use default value
+                    clusterQueryTimeout = 300;
+                }
+                int tableQueryTimeout = PropertyAnalyzer.analyzeTableQueryTimeout(properties, clusterQueryTimeout);
+                results.put(PropertyAnalyzer.PROPERTIES_TABLE_QUERY_TIMEOUT, tableQueryTimeout);
+            } catch (AnalysisException ex) {
+                throw new DdlException(ex.getMessage());
+            }
+        }
         if (!properties.isEmpty()) {
             throw new DdlException("Modify failed because unknown properties: " + properties);
         }
