@@ -20,6 +20,7 @@ import com.starrocks.common.AnalysisException;
 import com.starrocks.common.ErrorCode;
 import com.starrocks.common.ErrorReport;
 import com.starrocks.metric.MetricRepo;
+import com.starrocks.persist.DeleteSqlBlackLists;
 import com.starrocks.persist.ImageWriter;
 import com.starrocks.persist.SqlBlackListPersistInfo;
 import com.starrocks.persist.metablock.SRMetaBlockEOFException;
@@ -27,13 +28,10 @@ import com.starrocks.persist.metablock.SRMetaBlockException;
 import com.starrocks.persist.metablock.SRMetaBlockID;
 import com.starrocks.persist.metablock.SRMetaBlockReader;
 import com.starrocks.persist.metablock.SRMetaBlockWriter;
-<<<<<<< HEAD
-=======
 import com.starrocks.server.GlobalStateMgr;
 import com.starrocks.sql.analyzer.SemanticException;
 import com.starrocks.sql.ast.AddSqlBlackListStmt;
 import com.starrocks.sql.ast.DelSqlBlackListStmt;
->>>>>>> 4e09736bfb ([Enhancement] Code optimization  for StmtExecutor and SqlBlackList (#69304))
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -104,8 +102,6 @@ public class SqlBlackList {
         }
     }
 
-<<<<<<< HEAD
-=======
     public void addBlackSql(AddSqlBlackListStmt addSqlBlackListStmt) {
         Pattern sqlPattern = null;
         String sql = addSqlBlackListStmt.getSql().trim().toLowerCase().replaceAll(" +", " ")
@@ -139,7 +135,6 @@ public class SqlBlackList {
         }
     }
 
->>>>>>> 4e09736bfb ([Enhancement] Code optimization  for StmtExecutor and SqlBlackList (#69304))
     // we delete sql's regular expression use id, so we iterate this map.
     public void delete(long id) {
         try (LockCloseable ignored = new LockCloseable(rwLock.writeLock())) {

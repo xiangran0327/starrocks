@@ -2071,46 +2071,22 @@ public class StmtExecutor {
     }
 
     private void handleAddSqlBlackListStmt() {
-<<<<<<< HEAD
-        AddSqlBlackListStmt addSqlBlackListStmt = (AddSqlBlackListStmt) parsedStmt;
-        long id = GlobalStateMgr.getCurrentState().getSqlBlackList().put(addSqlBlackListStmt.getSqlPattern());
-        GlobalStateMgr.getCurrentState().getEditLog()
-                .logAddSQLBlackList(new SqlBlackListPersistInfo(id, addSqlBlackListStmt.getSqlPattern().pattern()));
-=======
         GlobalStateMgr.getCurrentState().getSqlBlackList().addBlackSql((AddSqlBlackListStmt) parsedStmt);
->>>>>>> 4e09736bfb ([Enhancement] Code optimization  for StmtExecutor and SqlBlackList (#69304))
     }
 
     private void handleDelSqlBlackListStmt() {
-        DelSqlBlackListStmt delSqlBlackListStmt = (DelSqlBlackListStmt) parsedStmt;
-        List<Long> indexs = delSqlBlackListStmt.getIndexs();
-        if (indexs != null) {
-            for (long id : indexs) {
-                GlobalStateMgr.getCurrentState().getSqlBlackList().delete(id);
-            }
-            GlobalStateMgr.getCurrentState().getEditLog()
-                    .logDeleteSQLBlackList(new DeleteSqlBlackLists(indexs));
-        }
+        GlobalStateMgr.getCurrentState().getSqlBlackList().deleteBlackSql((DelSqlBlackListStmt) parsedStmt);
     }
 
     private void handleAddBackendBlackListStmt() throws StarRocksException {
         AddBackendBlackListStmt addBackendBlackListStmt = (AddBackendBlackListStmt) parsedStmt;
         Authorizer.check(addBackendBlackListStmt, context);
-<<<<<<< HEAD
-        for (Long beId : addBackendBlackListStmt.getBackendIds()) {
-            SystemInfoService sis = GlobalStateMgr.getCurrentState().getNodeMgr().getClusterInfo();
-            if (sis.getBackend(beId) == null) {
-                throw new StarRocksException("Not found backend: " + beId);
-            }
-            SimpleScheduler.getHostBlacklist().addByManual(beId);
-=======
         SystemInfoService sis = GlobalStateMgr.getCurrentState().getNodeMgr().getClusterInfo();
         for (Long backendId : addBackendBlackListStmt.getBackendIds()) {
             if (sis.getBackend(backendId) == null) {
                 throw new StarRocksException("Not found backend: " + backendId);
             }
             SimpleScheduler.getHostBlacklist().addByManual(backendId);
->>>>>>> 4e09736bfb ([Enhancement] Code optimization  for StmtExecutor and SqlBlackList (#69304))
         }
     }
 
