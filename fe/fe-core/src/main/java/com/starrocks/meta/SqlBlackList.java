@@ -27,6 +27,13 @@ import com.starrocks.persist.metablock.SRMetaBlockException;
 import com.starrocks.persist.metablock.SRMetaBlockID;
 import com.starrocks.persist.metablock.SRMetaBlockReader;
 import com.starrocks.persist.metablock.SRMetaBlockWriter;
+<<<<<<< HEAD
+=======
+import com.starrocks.server.GlobalStateMgr;
+import com.starrocks.sql.analyzer.SemanticException;
+import com.starrocks.sql.ast.AddSqlBlackListStmt;
+import com.starrocks.sql.ast.DelSqlBlackListStmt;
+>>>>>>> 4e09736bfb ([Enhancement] Code optimization  for StmtExecutor and SqlBlackList (#69304))
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,6 +48,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 // Used by sql's blacklist
@@ -96,6 +104,42 @@ public class SqlBlackList {
         }
     }
 
+<<<<<<< HEAD
+=======
+    public void addBlackSql(AddSqlBlackListStmt addSqlBlackListStmt) {
+        Pattern sqlPattern = null;
+        String sql = addSqlBlackListStmt.getSql().trim().toLowerCase().replaceAll(" +", " ")
+                .replace("\r", " ")
+                .replace("\n", " ")
+                .replaceAll("\\s+", " ");
+        if (!sql.isEmpty()) {
+            try {
+                sqlPattern = Pattern.compile(sql);
+            } catch (PatternSyntaxException e) {
+                throw new SemanticException("Sql syntax error: %s", e.getMessage());
+            }
+        }
+
+        if (sqlPattern == null) {
+            throw new SemanticException("Sql pattern cannot be empty");
+        }
+
+        GlobalStateMgr.getCurrentState().getSqlBlackList().put(sqlPattern);
+    }
+
+    public void deleteBlackSql(DelSqlBlackListStmt delSqlBlackListStmt) {
+        List<Long> indexs = delSqlBlackListStmt.getIndexs();
+        if (indexs != null) {
+            GlobalStateMgr.getCurrentState().getEditLog()
+                    .logDeleteSQLBlackList(new DeleteSqlBlackLists(indexs), wal -> {
+                        for (long id : indexs) {
+                            GlobalStateMgr.getCurrentState().getSqlBlackList().delete(id);
+                        }
+                    });
+        }
+    }
+
+>>>>>>> 4e09736bfb ([Enhancement] Code optimization  for StmtExecutor and SqlBlackList (#69304))
     // we delete sql's regular expression use id, so we iterate this map.
     public void delete(long id) {
         try (LockCloseable ignored = new LockCloseable(rwLock.writeLock())) {
