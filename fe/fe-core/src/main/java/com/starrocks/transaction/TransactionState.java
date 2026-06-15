@@ -66,6 +66,8 @@ import com.starrocks.thrift.TTabletLocation;
 import com.starrocks.thrift.TUniqueId;
 import com.starrocks.warehouse.cngroup.ComputeResource;
 import io.opentelemetry.api.trace.Span;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -250,7 +252,11 @@ public class TransactionState implements Writable, GsonPreProcessable {
     @SerializedName("er")
     private Set<Long> errorReplicas;
 
-    private Set<TabletCommitInfo> tabletCommitInfos = null;
+    // Aggregated by backend: backendId -> set of tabletIds, to reduce FE heap usage under
+    // high-frequency stream load with massive tablets. We only keep (tabletId, backendId) pairs,
+    // dict cache columns carried by TabletCommitInfo are consumed by the txn state listeners
+    // before being stored here, so they are intentionally dropped.
+    private Long2ObjectOpenHashMap<LongOpenHashSet> tabletCommitInfosByBackend = null;
 
     // tabletCommitInfos is not persistent because it is very large, and it is null in follower FE.
     // 'OlapTableTxnLogApplier.applyVisibleLog' uses tabletCommitInfos to check whether replica need update version.
@@ -498,7 +504,7 @@ public class TransactionState implements Writable, GsonPreProcessable {
         this.newFinish = txnState.newFinish;
         this.finishState = txnState.finishState;
         this.errorReplicas = txnState.errorReplicas;
-        this.tabletCommitInfos = txnState.tabletCommitInfos;
+        this.tabletCommitInfosByBackend = txnState.tabletCommitInfosByBackend;
         this.unknownReplicas = txnState.unknownReplicas;
         this.useCombinedTxnLog = txnState.useCombinedTxnLog;
         this.loadIds = txnState.loadIds;
@@ -560,16 +566,43 @@ public class TransactionState implements Writable, GsonPreProcessable {
                 transactionStatus == TransactionStatus.COMMITTED;
     }
 
-    public Set<TabletCommitInfo> getTabletCommitInfos() {
-        return tabletCommitInfos;
+    /**
+     * Returns the committed tablets aggregated by backend: backendId -> list of tabletIds.
+     * Returns an empty map (never null) when there is no commit info.
+     */
+    public Map<Long, List<Long>> getTabletCommitInfosByBackend() {
+        Map<Long, List<Long>> result = Maps.newHashMap();
+        if (tabletCommitInfosByBackend == null) {
+            return result;
+        }
+        for (Map.Entry<Long, LongOpenHashSet> entry : tabletCommitInfosByBackend.entrySet()) {
+            LongOpenHashSet tablets = entry.getValue();
+            List<Long> tabletIds = new ArrayList<>(tablets.size());
+            for (long tabletId : tablets) {
+                tabletIds.add(tabletId);
+            }
+            result.put(entry.getKey(), tabletIds);
+        }
+        return result;
+    }
+
+    public boolean isTabletCommitInfosEmpty() {
+        return tabletCommitInfosByBackend == null || tabletCommitInfosByBackend.isEmpty();
     }
 
     public void setTabletCommitInfos(List<TabletCommitInfo> infos) {
-        if (this.tabletCommitInfos == null) {
-            this.tabletCommitInfos = Sets.newHashSet();
+        if (this.tabletCommitInfosByBackend == null) {
+            this.tabletCommitInfosByBackend = new Long2ObjectOpenHashMap<>();
         }
 
-        this.tabletCommitInfos.addAll(infos);
+        for (TabletCommitInfo info : infos) {
+            LongOpenHashSet tablets = this.tabletCommitInfosByBackend.get(info.getBackendId());
+            if (tablets == null) {
+                tablets = new LongOpenHashSet();
+                this.tabletCommitInfosByBackend.put(info.getBackendId(), tablets);
+            }
+            tablets.add(info.getTabletId());
+        }
     }
 
     // Not skip check replica version
@@ -615,12 +648,13 @@ public class TransactionState implements Writable, GsonPreProcessable {
     public void resetTabletCommitInfos() {
         // With a high streamload frequency and too many tablets involved,
         // TabletCommitInfos will take up too much memory.
-        tabletCommitInfos = null;
+        tabletCommitInfosByBackend = null;
     }
 
     public boolean tabletCommitInfosContainsReplica(long tabletId, long backendId, long replicaId) {
-        if (tabletCommitInfos != null) {
-            return tabletCommitInfos.contains(new TabletCommitInfo(tabletId, backendId));
+        if (tabletCommitInfosByBackend != null) {
+            LongOpenHashSet tabletIds = tabletCommitInfosByBackend.get(backendId);
+            return tabletIds != null && tabletIds.contains(tabletId);
         } else {
             // tabletCommitInfos is not persistent and is null in follower fe
             return !errorReplicas.contains(replicaId) && !unknownReplicas.contains(replicaId);
@@ -1085,8 +1119,12 @@ public class TransactionState implements Writable, GsonPreProcessable {
         if (txnCommitAttachment != null) {
             sb.append(", attachment: ").append(txnCommitAttachment);
         }
-        if (tabletCommitInfos != null) {
-            sb.append(", tabletCommitInfos size: ").append(tabletCommitInfos.size());
+        if (tabletCommitInfosByBackend != null) {
+            long tabletCommitInfosSize = 0;
+            for (LongOpenHashSet tabletIds : tabletCommitInfosByBackend.values()) {
+                tabletCommitInfosSize += tabletIds.size();
+            }
+            sb.append(", tabletCommitInfos size: ").append(tabletCommitInfosSize);
         }
         if (Config.transaction_state_print_partition_info && idToTableCommitInfos != null) {
             sb.append(", partition commit info:[");

@@ -34,7 +34,6 @@ import com.starrocks.proto.TxnInfoPB;
 import com.starrocks.rpc.BrpcProxy;
 import com.starrocks.server.GlobalStateMgr;
 import com.starrocks.system.ComputeNode;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -207,7 +206,7 @@ public class LakeTableTxnStateListener implements TransactionStateListener {
         if (!finishedTablets.isEmpty()) {
             txnState.setTabletCommitInfos(finishedTablets);
         }
-        if (CollectionUtils.isEmpty(txnState.getTabletCommitInfos())) {
+        if (txnState.isTabletCommitInfosEmpty()) {
             abortTxnSkipCleanup(txnState);
         } else {
             abortTxnWithCleanup(txnState);
@@ -230,10 +229,7 @@ public class LakeTableTxnStateListener implements TransactionStateListener {
 
     private void abortTxnWithCleanup(TransactionState txnState) {
         List<TxnInfoPB> txnInfos = Collections.singletonList(TxnInfoHelper.fromTransactionState(txnState));
-        Map<Long, List<Long>> tabletGroup = new HashMap<>();
-        for (TabletCommitInfo info : txnState.getTabletCommitInfos()) {
-            tabletGroup.computeIfAbsent(info.getBackendId(), k -> Lists.newArrayList()).add(info.getTabletId());
-        }
+        Map<Long, List<Long>> tabletGroup = txnState.getTabletCommitInfosByBackend();
         Map<Long, ComputeNode> allNodes = new HashMap<>();
         for (ComputeNode node : getAllAliveNodes()) {
             allNodes.put(node.getId(), node);
